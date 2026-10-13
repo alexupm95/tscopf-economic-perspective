@@ -1,0 +1,28 @@
+\begin{table}[!tb]
+\captionsetup{justification=centering, textfont={sc,footnotesize}, labelfont=footnotesize, labelsep=newline}
+\centering
+\label{tab:prices_39bus_gfm}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\newcommand{\rowhl}[1]{\cellcolor{gray!25}#1}
+\begin{tabular}{llr>{\hspace{5pt}}rr>{\hspace{5pt}}rrrr}
+\toprule
+ & & & \multicolumn{2}{c}{\acs{ACOPF}} & \multicolumn{4}{c}{\acs{TSCOPF}} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-9}
+ & Unit & $\mathrm{c}_g$ & $P$ & $\lambda_k$ & $P$ & $\lambda_k$ & $\psi_{g(k)}$ & $\pi_{g(k)}$ \\
+ & & {\scriptsize [\$/MWh]} & {\scriptsize [MW]} & {\scriptsize [\$/MWh]} & {\scriptsize [MW]} & {\scriptsize [\$/MWh]} & {\scriptsize [\$/MWh]} & {\scriptsize [\$/MWh]} \\
+\midrule
+\multirow{6}{*}{\acs{SG}} & G1 & 6 & 759.9 & 6 & 686.3 & 5.72 & $+$0.28 & 6 \\
+ & G2 & 14 & 650 & 46 & 650 & 26.58 & $+$0.17 & 26.75 \\
+ & \rowhl{G7} & \rowhl{18} & \rowhl{676.1} & \rowhl{18} & \rowhl{606.8} & \rowhl{41.38} & \rowhl{$-$23.38} & \rowhl{18} \\
+ & G8 & 31 & 0 & 12.53 & 0 & 11.66 & $+$0.37 & 12.03 \\
+ & G9 & 22 & 850 & 29.28 & 850 & 26.97 & $+$0.28 & 27.25 \\
+ & G10 & 27 & 481.7 & 27 & 624.7 & 25.81 & $+$1.19 & 27 \\
+\midrule
+\multirow{4}{*}{\acs{IBG}} & G3 & 1 & 750 & 46.94 & 750 & 33.46 & $+$0.04 & 33.50 \\
+ & G4 & 1 & 635.9 & 1 & 636.3 & 1.06 & $-$0.06 & 1 \\
+ & G5 & 1 & 550 & 1 & 550 & 1.05 & $-$0.02 & 1.03 \\
+ & \rowhl{G6} & \rowhl{1} & \rowhl{550} & \rowhl{11.48} & \rowhl{550} & \rowhl{41.63} & \rowhl{$-$0.64} & \rowhl{40.99} \\
+\bottomrule
+\end{tabular}
+\end{table}

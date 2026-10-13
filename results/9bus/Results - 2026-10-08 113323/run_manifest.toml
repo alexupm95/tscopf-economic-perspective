@@ -1,0 +1,379 @@
+[dispatch]
+bound_P_g = true
+bound_P_ik = false
+bound_P_ki = false
+bound_Q_g = true
+bound_Q_ik = false
+bound_Q_ki = false
+bound_V = true
+bound_encoding = "CONSTRAINT"
+bound_theta = true
+cost_type = "linear"
+ineq_ang_diff_branch = false
+ineq_sbranch_upper = false
+ineq_sg_upper = false
+pd_as_variable = false
+solve_explicit_dual = false
+susceptance_model = "SIMPLE"
+type_model = "ACOPF"
+use_matrix = true
+
+    [dispatch.limits]
+    ang_diff_clamp_ac_deg = 60.0
+    ang_diff_clamp_dc_deg = 30.0
+    theta_max_rad = 3.141592653589793
+    theta_min_rad = -3.141592653589793
+
+[exports]
+dispatch_dual_files = ["dual_P_balance.csv", "dual_Q_balance.csv", "dual_V_lower.csv", "dual_V_upper.csv", "dual_θ_lower.csv", "dual_θ_upper.csv", "dual_Pg_lower.csv", "dual_Pg_upper.csv", "dual_Qg_lower.csv", "dual_Qg_upper.csv"]
+ts_dual_files = ["dual_Pe_init.csv", "dual_Qe_init.csv", "dual_Pm_init.csv", "dual_delta_COI.csv", "dual_Pe.csv", "dual_delta.csv", "dual_Delta_Omega.csv", "dual_delta_COI_lower.csv", "dual_delta_COI_upper.csv", "dual_LB_δ.csv", "dual_UB_δ.csv", "dual_Pref_init.csv", "dual_gov_valve.csv", "dual_gov_mech.csv", "dual_gov_valve_sat.csv", "dual_Qe.csv", "dual_Pbalance.csv", "dual_Qbalance.csv", "dual_V_lower.csv", "dual_Ed_init.csv", "dual_Eq_init.csv", "dual_Vd_init.csv", "dual_Vq_init.csv", "dual_Te.csv", "dual_Vd.csv", "dual_Vq.csv", "dual_Ed.csv", "dual_Eq.csv", "dual_Vref_init.csv", "dual_avr_leadlag.csv", "dual_avr_E_fd.csv", "dual_avr_E_fd_sat.csv"]
+
+[resolved]
+D = [0.0, 0.0, 0.0, 0.0]
+Delta_omega_0 = 0.0
+H = [24.0, 6.0, 3.0, 3.0]
+Xd_tr = [0.0608, 0.1198, 0.1813, 0.1813]
+active_gen = [1, 2, 3, 4]
+c0 = [0.0, 0.0, 0.0, 0.0]
+c1 = [50.0, 30.0, 10.0, 20.0]
+c2 = [0.0, 0.0, 0.0, 0.0]
+clearing_time = 0.095
+cost_type = "linear"
+delta_pair_tol = [-3.141592653589793, 3.141592653589793]
+delta_tol = [-1.7453292519943295, 1.7453292519943295]
+f_syn = 50.0
+gen_bus = [1, 2, 3, 1]
+gen_ids = [1, 2, 3, 4]
+gfm_ids = []
+n_steps_fault = 20
+n_steps_postfault = 979
+n_steps_total = 999
+omega_syn = 314.1592653589793
+sg_ids = [1, 2, 3, 4]
+t_clear_fault = 0.105
+t_end_sim = 5.0
+t_start_fault = 0.01
+t_start_sim = 0.0
+t_step = 0.005
+
+[run]
+base_MVA = 100.0
+case = "9bus_colocated_bus1_H24_6_3"
+load_factor = 1.0
+overwrite_results = false
+run_script = "runs/run_9bus.jl"
+save_duals = true
+save_matrices = true
+save_optim_matrices = false
+save_ts_debug_csv = false
+save_ts_plots = false
+save_warmstart_dispatch = true
+silent_solver = false
+solver_name = "Ipopt"
+time_limit_sec = 3600.0
+trans_stab = true
+
+    [run.gurobi]
+    bar_iter_limit = 5000
+    feasibility_tol = 1.0e-8
+    mip_gap = 1.0e-8
+    nl_bar_c_feas_tol = 1.0e-8
+    nl_bar_d_feas_tol = 1.0e-8
+    nl_bar_iter_limit = 5000
+    nl_bar_p_feas_tol = 1.0e-8
+    optimality_target = -1
+    optimality_tol = 1.0e-8
+    output_flag = 1
+
+        [run.gurobi.raw_options]
+
+    [run.highs]
+    dual_feasibility_tolerance = 1.0e-8
+    ipm_iteration_limit = 5000
+    ipm_optimality_tolerance = 1.0e-8
+    output_flag = true
+    primal_feasibility_tolerance = 1.0e-8
+    simplex_iteration_limit = 5000
+    solver = "choose"
+
+        [run.highs.raw_options]
+
+    [run.ipopt]
+    compl_inf_tol = 1.0e-8
+    constr_viol_tol = 1.0e-8
+    dual_inf_tol = 1.0e-8
+    hessian_approximation = "limited-memory"
+    limited_memory_max_history = 50
+    max_iter = 1000
+    pardiso_lib_path = "C:\\Libraries\\Pardiso\\lib\\libpardiso.dll"
+    pardiso_license_message = false
+    print_level = 5
+    tol = 1.0e-8
+
+    [run.madnlp]
+    hessian_approximation = "exact"
+    max_iter = 3000
+    print_level = 3
+    tol = 1.0e-8
+
+        [run.madnlp.raw_options]
+
+[status]
+objective_MVA = 8934.162012727786
+t_build = 39.31699991226196
+t_solve = 49.269999980926514
+termination_status = "LOCALLY_SOLVED"
+
+[transient]
+extra_contingency_ids = []
+gen_dynamic_filename = "gen_dynamic_data_full.csv"
+gfm_dynamic_filename = ""
+
+    [transient.builder]
+    bound_Delta_omega_tf = false
+    bound_Delta_omega_tpf = false
+    bound_E = false
+    bound_E_fd_unlim_tf = false
+    bound_E_fd_unlim_tpf = false
+    bound_Ed = false
+    bound_Ed_tf = false
+    bound_Ed_tpf = false
+    bound_Eq = false
+    bound_Eq_tf = false
+    bound_Eq_tpf = false
+    bound_Id = false
+    bound_Id_tf = false
+    bound_Id_tpf = false
+    bound_Iq = false
+    bound_Iq_tf = false
+    bound_Iq_tpf = false
+    bound_P_m = false
+    bound_P_ref = false
+    bound_Pe_tf = false
+    bound_Pe_tpf = false
+    bound_Pm_tf = false
+    bound_Pm_tpf = false
+    bound_Pv_tf = false
+    bound_Pv_tpf = false
+    bound_Qe_tf = false
+    bound_Qe_tpf = false
+    bound_Te_tf = false
+    bound_Te_tpf = false
+    bound_V_ref = false
+    bound_delta = true
+    bound_deltaCOI_tf = false
+    bound_deltaCOI_tpf = false
+    bound_delta_tf = false
+    bound_delta_tpf = false
+    bound_encoding = "CONSTRAINT"
+    bound_gfm_E_droop_raw_tf = true
+    bound_gfm_E_droop_raw_tpf = true
+    bound_gfm_E_droop_tf = true
+    bound_gfm_E_droop_tpf = true
+    bound_gfm_E_int_raw_tf = true
+    bound_gfm_E_int_raw_tpf = true
+    bound_gfm_E_int_tf = true
+    bound_gfm_E_int_tpf = true
+    bound_gfm_Id_tf = true
+    bound_gfm_Id_tpf = true
+    bound_gfm_Iq_tf = true
+    bound_gfm_Iq_tpf = true
+    bound_gfm_P_meas_tf = true
+    bound_gfm_P_meas_tpf = true
+    bound_gfm_Q_meas_tf = true
+    bound_gfm_Q_meas_tpf = true
+    bound_gfm_V_meas_tf = true
+    bound_gfm_V_meas_tpf = true
+    bound_gfm_delta = true
+    bound_gfm_pq_clip_tf = true
+    bound_gfm_pq_clip_tpf = true
+    bound_gfm_pq_raw_tf = true
+    bound_gfm_pq_raw_tpf = true
+    ineq_delta_COI_tf_lower = true
+    ineq_delta_COI_tf_upper = true
+    ineq_delta_COI_tpf_lower = true
+    ineq_delta_COI_tpf_upper = true
+
+        [transient.builder.limits]
+        E_max_pu = 6.0
+        E_min_pu = 0.0
+        Ed_max_pu = 2.0
+        Ed_min_pu = -2.0
+        Eq_max_pu = 2.0
+        Eq_min_pu = -2.0
+        Id_max_pu = 5.0
+        Id_min_pu = -5.0
+        Iq_max_pu = 5.0
+        Iq_min_pu = -5.0
+        P_m_source = "dgen_pg_limits"
+        P_ref_source = "dgen_pg_limits"
+        V_bus_min_pu = 0.0
+        V_ref_max_pu = 6.0
+        V_ref_min_pu = 0.0
+        delta_max_rad = 3.141592653589793
+        delta_min_rad = -3.141592653589793
+        gfm_E_clip_slack_pu = 0.05
+        gfm_E_raw_extra_pu = 0.25
+        gfm_E_raw_slack_pu = 0.5
+        gfm_I_ceiling_pu = 20.0
+        gfm_I_floor_pu = 5.0
+        gfm_PQ_bound_offset_pu = 0.05
+        gfm_PQ_bound_scale = 1.5
+        gfm_P_meas_floor_pu = 3.0
+        gfm_Q_meas_floor_pu = 3.0
+        gfm_V_meas_max_pu = 2.5
+        gfm_V_meas_min_pu = 0.0
+        gfm_delta_max_rad = 3.141592653589793
+        gfm_delta_min_rad = -3.141592653589793
+        gfm_pq_clip_slack_pu = 0.05
+        gfm_pq_raw_span_pu = 20.0
+        gov_valve_max_source = "dgen_pg_limits"
+        gov_valve_min_pu = 0.0
+
+            [transient.builder.limits.Delta_omega_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Delta_omega_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.E_fd_unlim_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.E_fd_unlim_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Ed_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Ed_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Eq_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Eq_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Id_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Id_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Iq_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Iq_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Pe_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Pe_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Pm_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Pm_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Pv_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Pv_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Qe_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Qe_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Te_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.Te_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.deltaCOI_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.deltaCOI_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.delta_tf]
+            max = "Inf"
+            min = "-Inf"
+
+            [transient.builder.limits.delta_tpf]
+            max = "Inf"
+            min = "-Inf"
+
+    [transient.dyn_model]
+    Delta_omega_tol_pu = 0.03
+    allow_all_gfm = false
+    allow_gfm = false
+    bound_style_Delta_omega = "coi_box"
+    bound_style_delta = "coi_box"
+    constrain_Delta_omega = false
+    constrain_delta = true
+    delta_ref_gen_id = 1
+    dq_speed_dev_in_algebra = false
+    gen_order = "DQ_4TH"
+    gfm_in_coi = false
+    gfm_integrator = "backward_euler"
+    gfm_pq_overload = false
+    governor_limiter = "GOV_SMOOTH"
+    include_avr = true
+    include_governor = true
+    mech_power_mode = "USE_PM"
+    network_form = "FULL_BUS"
+    ode_first_step = "trapezoidal"
+    zip_load_p = [1.0, 0.0, 0.0]
+    zip_load_q = [1.0, 0.0, 0.0]
+
+        [transient.dyn_model.fault]
+        contingency_id = 2
+        fault_type = "SC"
+        gl_gen_ids = []
+        gl_load_bus_ids = []
+        gl_percent_power = []
+        ob_branch_ids = []
+        sc_fault_admittance_pu = [0.0, -1.0e6]
+        sc_fault_stamp = "add"
+
+    [transient.simulation]
+    Delta_omega_0 = 0.0
+    clearing_time = 0.095
+    delta_pair_tol_deg = 180.0
+    delta_tol_deg = 100.0
+    f_syn = 50.0
+    t_end_sim = 5.0
+    t_start_fault = 0.01
+    t_start_sim = 0.0
+    t_step = 0.005

@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="720pt" height="259.2pt" viewBox="0 0 720 259.2" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-13T13:05:56.987480</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.9, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 259.2 
+L 720 259.2 
+L 720 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 86.6 184.12 
+L 694.08 184.12 
+L 694.08 25.92 
+L 86.6 25.92 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path id="m91253cbb0f" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m91253cbb0f" x="134.962176" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="134.962176" y="203.989063" transform="rotate(-0 134.962176 203.989063)">1</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="198.806632" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="198.806632" y="203.989063" transform="rotate(-0 198.806632 203.989063)">2</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="262.651088" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="262.651088" y="203.989063" transform="rotate(-0 262.651088 203.989063)">3</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="326.495544" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="326.495544" y="203.989063" transform="rotate(-0 326.495544 203.989063)">4</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_5">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="390.34" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="390.34" y="203.989063" transform="rotate(-0 390.34 203.989063)">5</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="454.184456" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="454.184456" y="203.989063" transform="rotate(-0 454.184456 203.989063)">6</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_7">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="518.028912" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="518.028912" y="203.989063" transform="rotate(-0 518.028912 203.989063)">7</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="581.873368" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="581.873368" y="203.989063" transform="rotate(-0 581.873368 203.989063)">8</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_9">
+      <g>
+       <use xlink:href="#m91253cbb0f" x="645.717824" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: middle" x="645.717824" y="203.989063" transform="rotate(-0 645.717824 203.989063)">9</text>
+     </g>
+    </g>
+    <g id="text_10">
+     <text style="font-size: 26px; font-family: 'Courier New'; text-anchor: middle" x="390.34" y="227.879375" transform="rotate(-0 390.34 227.879375)">bus</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_10">
+      <path d="M 86.6 184.12 
+L 694.08 184.12 
+" clip-path="url(#p473b42a66b)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.3; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_11">
+      <defs>
+       <path id="m60c14be376" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m60c14be376" x="86.6" y="184.12" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: end" x="79.6" y="190.554531" transform="rotate(-0 79.6 190.554531)">0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_12">
+      <path d="M 86.6 131.386667 
+L 694.08 131.386667 
+" clip-path="url(#p473b42a66b)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.3; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_13">
+      <g>
+       <use xlink:href="#m60c14be376" x="86.6" y="131.386667" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: end" x="79.6" y="137.821198" transform="rotate(-0 79.6 137.821198)">20</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_14">
+      <path d="M 86.6 78.653333 
+L 694.08 78.653333 
+" clip-path="url(#p473b42a66b)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.3; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_15">
+      <g>
+       <use xlink:href="#m60c14be376" x="86.6" y="78.653333" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <text style="font-size: 21px; font-family: 'Courier New'; text-anchor: end" x="79.6" y="85.087865" transform="rotate(-0 79.6 85.087865)">40</text>
+     </g>
+    </g>
+    <g id="text_14">
+     <!-- $\lambda_k$ [\$/MWh] -->
+     <g transform="translate(45.494062 181.07) rotate(-90)">
+      <text>
+       <tspan x="0" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">λ</tspan>
+       <tspan x="27.266816" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'"> </tspan>
+       <tspan x="42.869355" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">[</tspan>
+       <tspan x="58.471895" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">$</tspan>
+       <tspan x="74.074434" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">/</tspan>
+       <tspan x="89.676973" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">M</tspan>
+       <tspan x="105.279512" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">W</tspan>
+       <tspan x="120.882051" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">h</tspan>
+       <tspan x="136.48459" y="-0.359375" style="font-size: 26px; font-family: 'Courier New'">]</tspan>
+       <tspan x="15.795039" y="2.940625" style="font-size: 18.2px; font-family: 'Courier New'">k</tspan>
+      </text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 114.212727 184.12 
+L 155.711624 184.12 
+L 155.711624 74.434667 
+L 114.212727 74.434667 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 178.057183 184.12 
+L 219.55608 184.12 
+L 219.55608 71.798 
+L 178.057183 71.798 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 241.90164 184.12 
+L 283.400536 184.12 
+L 283.400536 57.032667 
+L 241.90164 57.032667 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 305.746096 184.12 
+L 347.244992 184.12 
+L 347.244992 75.225667 
+L 305.746096 75.225667 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 369.590552 184.12 
+L 411.089448 184.12 
+L 411.089448 77.071333 
+L 369.590552 77.071333 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 433.435008 184.12 
+L 474.933904 184.12 
+L 474.933904 75.489333 
+L 433.435008 75.489333 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 497.279464 184.12 
+L 538.77836 184.12 
+L 538.77836 73.38 
+L 497.279464 73.38 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 561.12392 184.12 
+L 602.622817 184.12 
+L 602.622817 73.643667 
+L 561.12392 73.643667 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 624.968376 184.12 
+L 666.467273 184.12 
+L 666.467273 65.997333 
+L 624.968376 65.997333 
+z
+" clip-path="url(#p473b42a66b)" style="fill: #378d94"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 86.6 184.12 
+L 86.6 25.92 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 86.6 184.12 
+L 694.08 184.12 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="134.962176" y="67.289042" transform="rotate(-0 134.962176 67.289042)">41.6</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="198.806632" y="64.652375" transform="rotate(-0 198.806632 64.652375)">42.6</text>
+   </g>
+   <g id="text_17">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="262.651088" y="49.887042" transform="rotate(-0 262.651088 49.887042)">48.2</text>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="326.495544" y="68.080042" transform="rotate(-0 326.495544 68.080042)">41.3</text>
+   </g>
+   <g id="text_19">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="390.34" y="69.925708" transform="rotate(-0 390.34 69.925708)">40.6</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="454.184456" y="68.343708" transform="rotate(-0 454.184456 68.343708)">41.2</text>
+   </g>
+   <g id="text_21">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="518.028912" y="66.234375" transform="rotate(-0 518.028912 66.234375)">42.0</text>
+   </g>
+   <g id="text_22">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="581.873368" y="66.498042" transform="rotate(-0 581.873368 66.498042)">41.9</text>
+   </g>
+   <g id="text_23">
+    <text style="font-size: 22px; font-family: 'Courier New'; text-anchor: middle" x="645.717824" y="58.851708" transform="rotate(-0 645.717824 58.851708)">44.8</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p473b42a66b">
+   <rect x="86.6" y="25.92" width="607.48" height="158.2"/>
+  </clipPath>
+ </defs>
+</svg>

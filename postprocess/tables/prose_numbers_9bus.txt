@@ -1,0 +1,26 @@
+IV-A.1 (Results - 2026-10-08 112948)
+  cost 11.67 k$/h (ACOPF 8.78; +32.9 %)
+  G3 at the upper angle limit at t = 0.29, 0.765 s
+  G1: P 128.9  lam 41.14  psi +8.86  pi 50.00  pi-c 0.00  receives 6.45  profit 0.00  loss if paid lam alone 1.14
+  G2: P 89  lam 42.55  psi -12.55  pi 30.00  pi-c 0.00  receives 2.67  profit 0.00  loss if paid lam alone 0
+  G3: P 254.6  lam 48.07  psi -38.07  pi 10.00  pi-c 0.00  receives 2.55  profit 0.00  loss if paid lam alone 0
+  load Z5: P 187.5  lam 40.37  psi +4.93  pi 45.30  pays 8.49
+  load Z6: P 135  lam 40.85  psi +1.55  pi 42.40  pays 5.72
+  load Z8: P 150  lam 41.73  psi -7.44  pi 34.29  pays 5.14
+  lambda_k at generator and load buses: 40.37 to 48.07;  lambda_3 / c_3 = 4.81
+  loads pay 19.35  generators receive 11.67  R 7.68  [k$/h]
+
+IV-A.3 (Results - 2026-10-08 113323)
+  cost 8.95 k$/h (ACOPF 7.78; +15.0 %)
+  G3 at the upper angle limit at t = 0.285, 0.76 s
+  G1: P 35.5  lam 41.6  psi +8.4  pi 50.0  pi-c 0.0  receives 1.78  profit 0.00  loss if paid lam alone 0.30
+  G2: P 89.5  lam 42.6  psi -12.6  pi 30.0  pi-c 0.0  receives 2.69  profit 0.00  loss if paid lam alone 0
+  G3: P 247.5  lam 48.2  psi -38.2  pi 10.0  pi-c 0.0  receives 2.48  profit 0.00  loss if paid lam alone 0
+  G1b: P 100  lam 41.6  psi +5.4  pi 47.0  pi-c 27.0  receives 4.70  profit 2.70  loss if paid lam alone 0
+  load Z5: P 93.75  lam 40.6  psi +4.5  pi 45.1  pays 4.23
+  load I5: P 93.75  lam 40.6  psi +5.7  pi 46.3  pays 4.34
+  load Z6: P 135  lam 41.2  psi +1.0  pi 42.2  pays 5.70
+  load Z8: P 150  lam 41.9  psi -7.4  pi 34.5  pays 5.18
+  lambda_k at generator and load buses: 40.6 to 48.2;  lambda_3 / c_3 = 4.82
+  loads pay 19.45  generators receive 11.65  R 7.80  [k$/h]
+  bus 5: constant-current load pays 1.20 $/MWh more than constant-impedance

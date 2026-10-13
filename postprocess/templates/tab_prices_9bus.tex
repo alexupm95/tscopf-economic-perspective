@@ -1,0 +1,22 @@
+\begin{table}[!tb]
+\captionsetup{justification=centering, textfont={sc,footnotesize}, labelfont=footnotesize, labelsep=newline}
+\centering
+\label{tab:prices_9bus}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\newcommand{\rowhl}[1]{\cellcolor{gray!25}#1}
+\begin{tabular}{lcrrrrr}
+\toprule
+ & Bus & $P$ & $\lambda_k$ & $\psi$ & $\pi$ & Rev./Payment \\
+ &  & [MW] & [\$/MWh] & [\$/MWh] & [\$/MWh] & at $\pi$ [k\$/h] \\
+\midrule
+\multirow{3}{*}{Gen} & \rowhl{1} & \rowhl{132.6} & \rowhl{41.28} & \rowhl{$+$8.72} & \rowhl{50} & \rowhl{6.63} \\
+ & 2 & 96.7 & 42.65 & $-$12.65 & 30 & 2.90 \\
+ & 3 & 243.2 & 47.49 & $-$37.49 & 10 & 2.43 \\
+\midrule
+\multirow{3}{*}{Load} & 5 & 187.5 & 40.58 & $+$4.65 & 45.23 & 8.48 \\
+ & 6 & 135 & 41.00 & $+$1.45 & 42.45 & 5.73 \\
+ & \rowhl{8} & \rowhl{150} & \rowhl{41.81} & \rowhl{$-$7.05} & \rowhl{34.76} & \rowhl{5.21} \\
+\bottomrule
+\end{tabular}
+\end{table}

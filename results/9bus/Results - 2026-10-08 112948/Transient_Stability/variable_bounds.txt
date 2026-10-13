@@ -1,0 +1,10 @@
+source: TSCOPF package
+artefact: JuMP VariableRef bounds only (not constraint-encoded boxes)
+num_variables              = 63987
+num_with_any_var_bound     = 0
+num_finite_box_lb_and_ub   = 0
+num_one_sided_finite       = 0
+num_unbounded_no_var_bound = 63987
+num_±Inf_only_or_partial   = 0
+
+name	lb	ub	finite_lb	finite_ub

@@ -1,0 +1,7 @@
+__pycache__/
+.ipynb_checkpoints/
+*.html
+jacobian_*.csv
+dynamic_model_details.txt
+# new solves are written here
+new_runs/

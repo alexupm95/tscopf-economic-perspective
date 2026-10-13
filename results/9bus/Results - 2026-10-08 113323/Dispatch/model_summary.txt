@@ -1,0 +1,10 @@
+A JuMP Model
+├ solver: Ipopt
+├ objective_sense: MIN_SENSE
+│ └ objective_function_type: AffExpr
+├ num_variables: 26
+├ num_constraints: 71
+│ ├ NonlinearExpr in MOI.EqualTo{Float64}: 18
+│ ├ AffExpr in MOI.EqualTo{Float64}: 1
+│ └ AffExpr in MOI.LessThan{Float64}: 52
+└ Names registered in the model: none

@@ -1,0 +1,22 @@
+******** Simulation Input Parameters ********
+==============================================
+Optimize Transient Stability?: true
+Case:                          9bus_colocated_bus1_H24_6_3
+Base MVA:                      100.0
+δ tolerance (deg):             [-100.0; +100.0]
+δ pair separation (deg):       [-180.0; +180.0]
+Synchronous frequency (Hz):    50.0
+----------------------------------------------
+Reduced Model:                 true
+Fault Category:                SC
+Fault Location Type:           bus
+Fault Bus ID:                  7
+Disconnect Branch?:            true
+Branches to Disconnect:        [6]
+----------------------------------------------
+Simulation start time (s):     0.0
+Simulation end time (s):       5.0
+Time step (s):                 0.005
+Fault start time (s):          0.01
+Clearing Time (s):            0.105
+==============================================

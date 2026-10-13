@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+title: "TSCOPF.jl: Transient-Stability-Constrained Optimal Power Flow in Julia/JuMP"
+abstract: >-
+  TSCOPF.jl builds and solves steady-state optimal power flow subproblems
+  (economic dispatch, DC-OPF, AC-OPF, unit commitment) together with
+  transient-stability-constrained formulations over Kron-reduced or full-bus
+  networks, classical second-order or fourth-order dq machines, optional AVR and
+  TGOV1 governor blocks, and mixed synchronous plus grid-forming fleets. Duals
+  of every constraint family are exported for economic interpretation.
+type: software
+version: 0.1.2
+license: MIT
+repository-code: "https://github.com/alexupm95/TSCOPF.jl"
+url: "https://alexupm95.github.io/TSCOPF.jl/dev/"
+authors:
+  - given-names: "Alex Junior"
+    family-names: "da Cunha Coelho"
+    affiliation: "Universidad Politécnica de Madrid"
+    email: "alexjunior.dacunhacoelho@upm.es"
+keywords:
+  - optimal power flow
+  - transient stability
+  - power system dynamics
+  - grid-forming converters
+  - dual variables
+  - Julia
+  - JuMP

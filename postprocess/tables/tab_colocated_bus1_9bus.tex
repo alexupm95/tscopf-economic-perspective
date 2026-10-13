@@ -1,0 +1,24 @@
+\begin{table}[!tb]
+\captionsetup{justification=centering, textfont={sc,footnotesize}, labelfont=footnotesize, labelsep=newline}
+\centering
+\label{tab:colocated_bus1_9bus}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\newcommand{\rowhl}[1]{\cellcolor{gray!25}#1}
+\begin{tabular}{lrrrrrrr}
+\toprule
+ & Asset & $P$ & $\lambda_k$ & $\psi$ & $\pi$ & Rev./Paym. & Profit \\
+ &  & [MW] & [\$/MWh] & [\$/MWh] & [\$/MWh] & at $\pi$ [k\$/h] & at $\pi$ [k\$/h] \\
+\midrule
+\multirow{4}{*}{Gen} & \rowhl{G1} & \rowhl{35.5} & \rowhl{41.60} & \rowhl{$+$8.40} & \rowhl{50} & \rowhl{1.78} & \rowhl{0.00} \\
+ & \rowhl{G1b} & \rowhl{100} & \rowhl{41.60} & \rowhl{$+$5.40} & \rowhl{47} & \rowhl{4.70} & \rowhl{2.70} \\
+ & G2 & 89.5 & 42.60 & $-$12.60 & 30 & 2.69 & 0.00 \\
+ & G3 & 247.5 & 48.20 & $-$38.20 & 10 & 2.48 & 0.00 \\
+\midrule
+\multirow{4}{*}{Load} & \rowhl{Z$_5$} & \rowhl{93.75} & \rowhl{40.60} & \rowhl{$+$4.50} & \rowhl{45.10} & \rowhl{4.23} & \rowhl{---} \\
+ & \rowhl{I$_5$} & \rowhl{93.75} & \rowhl{40.60} & \rowhl{$+$5.70} & \rowhl{46.30} & \rowhl{4.34} & \rowhl{---} \\
+ & Z$_6$ & 135 & 41.20 & $+$1.00 & 42.20 & 5.70 & --- \\
+ & Z$_8$ & 150 & 41.90 & $-$7.40 & 34.50 & 5.18 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
