@@ -1,0 +1,398 @@
+/* ==========================================================================
+   TSCOPF.jl — lecture-notes theme (Direction C)
+   Crimson Pro prose · Inter chrome · JetBrains Mono code · cobalt accents
+   ========================================================================== */
+
+/* --- Palette (light) ---------------------------------------------------- */
+html[data-theme="documenter-light"],
+html:not([data-theme]) {
+  --tsc-page: #fcfcfd;
+  --tsc-ink: #24292f;
+  --tsc-ink-muted: #57606a;
+  --tsc-cobalt: #1d4ed8;
+  --tsc-cobalt-soft: #dbeafe;
+  --tsc-green: #166534;
+  --tsc-green-soft: #f4faf5;
+  --tsc-green-border: #86efac;
+  --tsc-warn: #9a3412;
+  --tsc-warn-soft: #fff7ed;
+  --tsc-code-bg: #f3f4f6;
+  --tsc-sidebar: #f6f7f9;
+  --tsc-card: #ffffff;
+  --tsc-border: #d0d7de;
+  --tsc-content-max: min(76rem, calc(100vw - 20rem));
+}
+
+/* --- Palette (dark) ----------------------------------------------------- */
+html[data-theme="documenter-dark"] {
+  --tsc-page: #0d1117;
+  --tsc-ink: #e6edf3;
+  --tsc-ink-muted: #8b949e;
+  --tsc-cobalt: #7ca5f5;
+  --tsc-cobalt-soft: #1c2d4a;
+  --tsc-green: #4ade80;
+  --tsc-green-soft: #0f1f14;
+  --tsc-green-border: #166534;
+  --tsc-warn: #fb923c;
+  --tsc-warn-soft: #1c1410;
+  --tsc-code-bg: #161b22;
+  --tsc-sidebar: #010409;
+  --tsc-card: #0d1117;
+  --tsc-border: #30363d;
+  --tsc-content-max: min(76rem, calc(100vw - 20rem));
+}
+
+/* --- Base layout -------------------------------------------------------- */
+html {
+  font-size: 16px;
+}
+
+body,
+#documenter {
+  background: var(--tsc-page);
+  color: var(--tsc-ink);
+  font-family: var(--font-ui);
+}
+
+#documenter .docs-main {
+  background: var(--tsc-page);
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+#documenter .docs-article,
+#documenter #documenter-page.content,
+#documenter article.content {
+  max-width: var(--tsc-content-max);
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1.5rem 2rem;
+  font-family: var(--font-prose);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--tsc-ink);
+  overflow-x: auto;
+}
+
+/* --- Sidebar & chrome --------------------------------------------------- */
+#documenter .docs-sidebar {
+  background: var(--tsc-sidebar);
+  border-right: 1px solid var(--tsc-border);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+#documenter .docs-sidebar .docs-logo > img {
+  padding: 0.5rem 0;
+}
+
+#documenter .docs-sidebar a {
+  color: var(--tsc-ink-muted);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#documenter .docs-sidebar a.is-active,
+#documenter .docs-sidebar a:hover {
+  color: var(--tsc-cobalt);
+}
+
+#documenter .docs-sidebar .docs-menu-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tsc-ink-muted);
+}
+
+#documenter .docs-navbar,
+#documenter .docs-footer {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  background: var(--tsc-card);
+  border-color: var(--tsc-border);
+}
+
+#documenter .docs-breadcrumbs {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--tsc-ink-muted);
+}
+
+#documenter .docs-breadcrumbs a {
+  color: var(--tsc-cobalt);
+}
+
+/* --- Typography: prose -------------------------------------------------- */
+#documenter .content h1,
+#documenter .content h2,
+#documenter .content h3,
+#documenter .content h4 {
+  font-family: var(--font-prose);
+  font-weight: 500;
+  color: var(--tsc-ink);
+  letter-spacing: -0.01em;
+}
+
+#documenter .content h1 {
+  font-size: 2rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+#documenter .content h2 {
+  font-size: 1.45rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--tsc-border);
+}
+
+#documenter .content h3 {
+  font-size: 1.15rem;
+  margin-top: 1.5rem;
+}
+
+#documenter .content p,
+#documenter .content li {
+  font-family: var(--font-prose);
+}
+
+#documenter .content a {
+  color: var(--tsc-cobalt);
+  text-underline-offset: 2px;
+}
+
+#documenter .content strong {
+  font-weight: 600;
+}
+
+/* --- Code ---------------------------------------------------------------- */
+#documenter .content code,
+#documenter .content pre code {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+}
+
+#documenter .content :not(pre) > code {
+  background: var(--tsc-code-bg);
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  font-size: 0.88em;
+}
+
+#documenter .content pre {
+  background: var(--tsc-code-bg);
+  border: 1px solid var(--tsc-border);
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  border-left: none;
+  overflow-x: auto;
+}
+
+#documenter .content pre > code {
+  background: transparent;
+  padding: 0;
+}
+
+#documenter .documenter-example-output {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--tsc-code-bg);
+  border-radius: 0 0 6px 6px;
+}
+
+/* --- Math display ------------------------------------------------------- */
+#documenter .content .math {
+  margin: 1.5em 0;
+  overflow-x: auto;
+}
+
+mjx-container[display="true"] {
+  margin: 1.5em 0 !important;
+}
+
+/* --- Tables ------------------------------------------------------------- */
+#documenter .content table {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  border-collapse: collapse;
+  border-spacing: 0;
+  border: 1px solid var(--tsc-border);
+  border-radius: 6px;
+  width: 100%;
+  margin: 1.25rem 0;
+  table-layout: auto;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#documenter .content table thead,
+#documenter .content table tbody {
+  display: table;
+  width: max-content;
+  min-width: 100%;
+}
+
+#documenter .content table tbody tr:nth-child(odd) {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#documenter .content table th {
+  background-color: rgba(128, 128, 128, 0.12);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+#documenter .content table td,
+#documenter .content table th {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--tsc-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+#documenter .content table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Keep identifier columns compact; let Description columns wrap */
+#documenter .content table td:first-child,
+#documenter .content table th:first-child {
+  white-space: nowrap;
+}
+
+#documenter .content table td:has(> code:only-child) {
+  white-space: nowrap;
+}
+
+/* --- Admonitions → lecture-note environments ---------------------------- */
+
+#documenter .content .admonition {
+  border-radius: 6px;
+  margin: 1.5rem 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+#documenter .content .admonition-header {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0;
+  margin-bottom: 0.5rem;
+  background: transparent;
+  border: none;
+}
+
+#documenter .content .admonition-body {
+  font-family: var(--font-prose);
+  padding: 0;
+}
+
+/* Model / note — cobalt hanging label, no fill */
+#documenter .content .admonition.is-note {
+  border-left: none;
+  padding-left: 0;
+}
+
+#documenter .content .admonition.is-note .admonition-header {
+  color: var(--tsc-cobalt);
+}
+
+#documenter .content .admonition.is-note .admonition-body {
+  margin-top: 0.25rem;
+}
+
+/* Worked example — green frame */
+#documenter .content .admonition.is-tip {
+  background: var(--tsc-green-soft);
+  border: 1px solid var(--tsc-green-border);
+  border-left: 4px solid var(--tsc-green);
+  padding: 0.85rem 1rem 0.85rem 1rem;
+}
+
+#documenter .content .admonition.is-tip .admonition-header {
+  color: var(--tsc-green);
+  margin-bottom: 0.35rem;
+}
+
+/* Sign convention / warning — red-brown left rule */
+#documenter .content .admonition.is-warning {
+  background: var(--tsc-warn-soft);
+  border-left: 5px solid var(--tsc-warn);
+  padding: 0.75rem 1rem;
+}
+
+#documenter .content .admonition.is-warning .admonition-header {
+  color: var(--tsc-warn);
+}
+
+/* Assumption — cobalt left rule, italic body */
+#documenter .content .admonition.is-info {
+  border-left: 4px solid var(--tsc-cobalt);
+  padding: 0.75rem 1rem;
+  background: var(--tsc-cobalt-soft);
+}
+
+#documenter .content .admonition.is-info .admonition-header {
+  color: var(--tsc-cobalt);
+}
+
+#documenter .content .admonition.is-info .admonition-body {
+  font-style: italic;
+}
+
+/* --- Main content card (mockup-style panel on wide screens) -------------- */
+@media (min-width: 900px) {
+  #documenter .docs-article,
+  #documenter #documenter-page.content,
+  #documenter article.content {
+    background: var(--tsc-card);
+    border: 1px solid var(--tsc-border);
+    border-radius: 10px;
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 2rem 2.25rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+}
+
+@media (max-width: 1199px) {
+  :root {
+    --tsc-content-max: min(76rem, calc(100vw - 2.5rem));
+  }
+}
+
+/* --- Theme picker: light/dark only visually ----------------------------- */
+html[data-theme^="catppuccin"] {
+  color-scheme: light;
+}
+
+html[data-theme^="catppuccin"] body,
+html[data-theme^="catppuccin"] #documenter {
+  background: var(--tsc-page);
+  color: var(--tsc-ink);
+}
+
+/* --- Search & version selector ------------------------------------------ */
+#documenter .docs-search-query,
+#documenter #documenter-version-selector,
+#documenter #documenter-themepicker {
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+/* --- Footer ------------------------------------------------------------- */
+#documenter .docs-footer {
+  color: var(--tsc-ink-muted);
+}
