@@ -11,8 +11,8 @@ abstract: >-
 type: software
 version: 0.1.2
 license: MIT
-repository-code: "https://github.com/alexupm95/TSCOPF.jl"
-url: "https://alexupm95.github.io/TSCOPF.jl/dev/"
+repository-code: "https://github.com/alexupm95/tscopf-economic-perspective"
+url: "https://alexupm95.github.io/tscopf-economic-perspective/dev/"
 authors:
   - given-names: "Alex Junior"
     family-names: "da Cunha Coelho"

@@ -1,0 +1,38 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    tags: ['*']
+  pull_request:
+
+# Serialised deliberately, NOT keyed on github.ref. A release pushes main and the
+# version tag together, which fires two runs at once; keyed on the ref they do not
+# share a group, so both build docs and both race to push gh-pages. The loser dies
+# with "! [rejected] HEAD -> gh-pages (fetch first)" and that version's docs never
+# deploy. One group + no cancellation makes the tag run queue behind the main run
+# and clone a gh-pages that already contains it.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    permissions:
+      actions: write
+      contents: write
+      statuses: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.11'
+      - uses: julia-actions/cache@v2
+      - name: Prepare docs environment
+        run: julia TSCOPF/docs/setup_docs_env.jl
+      - name: Build and deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: julia --project=TSCOPF/docs --color=yes TSCOPF/docs/make.jl

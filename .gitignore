@@ -5,3 +5,6 @@ jacobian_*.csv
 dynamic_model_details.txt
 # new solves are written here
 new_runs/
+# documentation build
+TSCOPF/docs/build/
+TSCOPF/docs/Manifest.toml

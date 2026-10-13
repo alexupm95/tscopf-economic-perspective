@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="TSCOPF.jl logo">
+  <title>TSCOPF.jl</title>
+
+  <!-- Outer ring: gauge / stability boundary -->
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#389826" stroke-width="4" opacity="0.35"/>
+
+  <!-- COI reference line (dashed, steady-state) -->
+  <line x1="30" y1="100" x2="170" y2="100" stroke="#8f8f8f" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+
+  <!-- Damped rotor-angle swing settling back to the COI reference -->
+  <path d="M 28 60
+           C 45 60, 50 130, 66 130
+           C 80 130, 84 78, 98 78
+           C 108 78, 112 108, 122 108
+           C 130 108, 133 94, 142 96
+           C 150 98, 154 100, 172 100"
+        fill="none" stroke="#9558B2" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Three-generator network (Kron-reduced core), edges first -->
+  <g stroke="#4063D8" stroke-width="4" stroke-linecap="round">
+    <line x1="100" y1="150" x2="60" y2="176"/>
+    <line x1="100" y1="150" x2="140" y2="176"/>
+    <line x1="60" y1="176" x2="140" y2="176"/>
+  </g>
+
+  <!-- Generator nodes -->
+  <circle cx="100" cy="150" r="10" fill="#CB3C33"/>
+  <circle cx="60" cy="176" r="10" fill="#389826"/>
+  <circle cx="140" cy="176" r="10" fill="#389826"/>
+</svg>

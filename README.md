@@ -8,6 +8,7 @@ only what the paper uses.
 | Folder | Content |
 |---|---|
 | `TSCOPF/` | The Julia package that builds and solves the models, with the `Manifest.toml` of the environment. |
+| `TSCOPF/docs/` | The documentation of the package: the model, equation by equation, and every setting. Published at <https://alexupm95.github.io/tscopf-economic-perspective/dev/>. |
 | `kkt/` | Price decomposition: the exports attached to a solve (`kkt_pg_terms.jl`, `kkt_sensitivity.jl`) and the notebooks that turn them into shadow prices and settlements. |
 | `INPUT_FILES/` | Input data of the three cases of the paper. |
 | `runs/` | The scripts that solve the runs. |
