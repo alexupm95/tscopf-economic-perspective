@@ -1,0 +1,4 @@
+Fault B = -1e+08 MVA. probe=False.
+Initial condition Load Flow used 1 iterations
+----------------------------- Machine initial condition -----------------------------
+Initial conditions check O.K.

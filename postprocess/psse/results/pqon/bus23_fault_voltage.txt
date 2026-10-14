@@ -1,0 +1,2 @@
+min V_23 between 0.010000 and 0.034000 s = 5.339566e-05 pu
+fault_b_mva = -1e+08

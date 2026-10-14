@@ -1,0 +1,7 @@
+
+TGOV1 VMAX was raised once, to 0.001 pu above the mechanical power
+PSS/E initialises. That power is the scheduled electrical power plus
+stator I^2 Ra, so a unit dispatched at Pmax starts above Pmax/MBASE.
+The TSC-OPF valve limit stays at Pmax. This is the only change.
+  bus 31 (G2): VMAX = 6.6700 pu on 100 MVA
+  bus 38 (G9): VMAX = 8.5140 pu on 100 MVA

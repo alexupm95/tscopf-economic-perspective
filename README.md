@@ -48,7 +48,9 @@ From `postprocess/`, with Python 3.11 or later, `pandas` and `matplotlib`:
 | `tables_figure_39bus.py` | `tables/tab_prices_39bus_gfm.tex`, `tables/tab_settlement_39bus_gfm.tex`, `figures/angles_psse_39bus_gfm.pdf` |
 
 `psse/aligned.csv` holds the PSS/E time-domain simulation of the 39-bus dispatch, on the time
-grid of the TSCOPF run. The figures use the Courier New font.
+grid of the TSCOPF run. `psse/` also holds the PSS/E case (RAW, DYR, SAV), the scripts that build
+it, run it and compare it with TSCOPF, and their outputs: see `postprocess/psse/README.md`. PSS/E
+itself is commercial and is not included. The figures use the Courier New font.
 
 ## Citation
 

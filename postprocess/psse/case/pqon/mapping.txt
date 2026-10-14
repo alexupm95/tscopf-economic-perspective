@@ -1,0 +1,40 @@
+Parameter mapping from the TSC-OPF CSVs to PSS/E. Bases are stated per row.
+System base 100 MVA, system frequency 50 Hz.
+Synchronous reactances and H are already on the system base, and MBASE = 100 MVA,
+so they are copied unchanged. Converter CONs are on InvBase, and MBASE = InvBase.
+
+GENROU (system base, seconds and pu):
+  Td -> T'd0,  T''d0 = 0.03 s (not in the CSV; GENROU requires it)
+  Tq -> T'q0,  T''q0 = 0.04 s (not in the CSV; GENROU requires it)
+  H -> H,  D -> D = 0
+  Xd -> Xd,  Xq -> Xq,  Xd_tr -> X'd,  Xq_tr -> X'q
+  X''d = Xd_tr. Xd_tr = Xq_tr on every machine, and GENROU has one X''.
+  Xl = 0,  S(1.0) = 0,  S(1.2) = 0
+  Ra -> power-flow ZR (GENROU has no Ra CON). Used by CONG, not by the power-flow network.
+  Xd_tr -> power-flow ZX for the same reason. WMOD = 0.
+
+SEXS (pu, seconds):
+  Ta_exc = 0 so TA/TB = 0,  Tb_exc -> TB,  K_exc -> K,  T_exc -> TE
+  EMIN = 0.0,  EMAX = 6.0
+
+TGOV1 (pu on MBASE = 100 MVA, seconds):
+  R -> R,  T1 -> T1,  T2 -> T2,  T3 -> T3,  Dt = 0
+  VMAX = Pmax/100,  VMIN = Pmin/100. Every Pmin in generators_data.csv is 0.
+
+REGFMA1, one record per converter, CONs on that converter's InvBase:
+  Icons VFlag = 1, QVFlag = 1
+  TPf, TQf, TVf, Imax, Emax, Emin, mp, mq, Kpv, Kiv from gfm_dynamic_data.csv
+  Pmax, Pmin, Qmax, Qmin, Kppmax, Kipmax, Kpqmax, Kiqmax from gfm_dynamic_data.csv
+  Those eight values are the gfm_pq_overload = true record.
+  Imax = 1.2 stays on.
+  Power flow: MBASE = InvBase, ZR = 0, ZX = Xl = 0.15, WMOD = 1, WPF = 1.
+
+InvBase (MVA) and centre-of-inertia weight gfm_H_eff (s on the system base):
+  G3 bus 32: InvBase = 843.7, H_eff = 4.2185
+  G4 bus 33: InvBase = 1174.8, H_eff = 5.8740
+  G5 bus 34: InvBase = 1080.2, H_eff = 5.4010
+  G6 bus 35: InvBase = 1085.7, H_eff = 5.4285
+
+Loads: constant MVA in the power flow, then conl to 100% admittance on P and Q.
+Fault: dist_bus_fault units=1, [G, B] = [0, -1e8] MVA, from Y = [0, -1e6] pu.
+Bus 39 is the slack, so its angle is shifted to 0 before the solve.
