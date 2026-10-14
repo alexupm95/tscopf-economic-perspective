@@ -49,6 +49,22 @@ From `postprocess/`, with Python 3.11 or later, `pandas` and `matplotlib`:
 `psse/aligned.csv` holds the PSS/E time-domain simulation of the 39-bus dispatch, on the time
 grid of the TSCOPF run. The figures use the Courier New font.
 
+## Citation
+
+If you use this code or data, please cite the paper:
+
+```bibtex
+@misc{coelho2026shadowpricingtransientstabilityconstrained,
+      title={Shadow Pricing in Transient Stability-Constrained Optimal Power Flow},
+      author={Alex Coelho and Araceli Hernandez and Luis Badesa},
+      year={2026},
+      eprint={2610.18563},
+      archivePrefix={arXiv},
+      primaryClass={eess.SY},
+      url={https://arxiv.org/abs/2610.18563},
+}
+```
+
 ## Acknowledgements
 
 This work was supported by **MICIU/AEI/10.13039/501100011033** and **ERDF/EU** under grants **PID2023-150401OA-C22** and **PID2022-141609OB-I00**, as well as by the Madrid Government (Comunidad de Madrid-Spain) under the Multiannual Agreement 2023-2026 with Universidad Politécnica de Madrid, `Line A - Emerging PIs' (grant number: **24-DWGG5L-33-SMHGZ1**).

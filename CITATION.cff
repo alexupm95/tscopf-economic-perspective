@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the paper below."
+title: "Code, data and results for: Shadow Pricing in Transient Stability-Constrained Optimal Power Flow"
+type: software
+repository-code: "https://github.com/alexupm95/tscopf-economic-perspective"
+url: "https://alexupm95.github.io/tscopf-economic-perspective/dev/"
+authors:
+  - given-names: "Alex Junior"
+    family-names: "da Cunha Coelho"
+    affiliation: "Universidad Politécnica de Madrid"
+    email: "alexjunior.dacunhacoelho@upm.es"
+preferred-citation:
+  type: article
+  title: "Shadow Pricing in Transient Stability-Constrained Optimal Power Flow"
+  authors:
+    - given-names: "Alex"
+      family-names: "Coelho"
+    - given-names: "Araceli"
+      family-names: "Hernandez"
+    - given-names: "Luis"
+      family-names: "Badesa"
+  year: 2026
+  journal: "arXiv preprint"
+  identifiers:
+    - type: other
+      value: "arXiv:2610.18563"
+      description: "arXiv eprint, primary class eess.SY"
+  url: "https://arxiv.org/abs/2610.18563"
