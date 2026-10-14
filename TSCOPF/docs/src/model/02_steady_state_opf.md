@@ -18,7 +18,7 @@ This page states the steady-state models TSCOPF implements today: ACOPF (the non
 
 ## AC optimal power flow
 
-ACOPF is the steady-state block inside TSC-ACOPF (Kron and FULL_BUS). You pick the fuel-cost curve, then minimise total generation cost subject to nonlinear power flow.
+ACOPF is the steady-state block inside TSC-ACOPF (Kron and `FULL_BUS`). You pick the fuel-cost curve, then minimise total generation cost subject to nonlinear power flow.
 
 !!! note "Model 2.1 (ACOPF objective)"
     Minimise quadratic (or linear) generator fuel cost:
@@ -103,7 +103,7 @@ DCOPF drops reactive power and voltage magnitude, linearises the network around 
     - `SIMPLE`: $B_{km} = 1/x_{km}$ (textbook DC, ignores series $r$)
     - `POWERMODELS`: $B_{km} = \operatorname{Im}\!\big(1/(r_{km}+jx_{km})\big) = x_{km}/(r_{km}^2+x_{km}^2)$
 
-    They coincide when $r_{km}=0$. With `POWERMODELS`, in-house DC-OPF matches PowerModels `DCPPowerModel` on primal quantities (see `test/runtests_powermodels_crosscheck.jl`).
+    They coincide when $r_{km}=0$. With `POWERMODELS`, in-house DC-OPF matches PowerModels `DCPPowerModel` on primal quantities.
 
 Angle limits and optional branch angle-difference limits replace thermal constraints. The same LMP convention applies: $\pi_k = +\lambda_k$ on $\eqref{eq:dcopf-balance}$ for the primal duals.
 

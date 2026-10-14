@@ -116,7 +116,7 @@ is inconsistent with an explicit `P_m`); `FULL_BUS` requires `USE_PM` plus a sol
 ACOPF warm start; TSC-DCOPF + `FULL_BUS` is not implemented. The data-dependent
 reference-generator checks live in `validate_δ_reference!`, also pre-warm-start.
 
-See the user guide, section 4.
+See the parameter reference, section 4.
 """
 Base.@kwdef struct DynModelConfig
     # Machine / network complexity (Phase 1+ will dispatch on these)

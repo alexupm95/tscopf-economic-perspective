@@ -30,9 +30,9 @@ Both path arguments of `run_case!` are **positional and required** — `run_case
 ---
 
 
-## 7. Example configurations
+## 1. Example configurations
 
-### 7.1 Plain ACOPF (no TS)
+### 1.1 Plain ACOPF (no TS)
 
 ```julia
 cfg = RunConfig(
@@ -44,7 +44,7 @@ cfg = RunConfig(
 )
 ```
 
-### 7.2 TSC-ACOPF — Kron, SC contingency 2
+### 1.2 TSC-ACOPF — Kron, SC contingency 2
 
 ```julia
 cfg = RunConfig(
@@ -62,7 +62,7 @@ cfg = RunConfig(
 )
 ```
 
-### 7.3 TSC-ACOPF — FULL_BUS, SC
+### 1.3 TSC-ACOPF — `FULL_BUS`, SC
 
 ```julia
 cfg = RunConfig(
@@ -85,20 +85,20 @@ cfg = RunConfig(
 )
 ```
 
-### 7.3b TSC-ACOPF — mixed SG + GFM (`9bus_gfm`)
+### 1.4 TSC-ACOPF — mixed SG + GFM (`39bus_gfm`)
 
 Requires `DQ_4TH` + `FULL_BUS` and split CSVs (`gen_dynamic_data_full.csv` for SGs, `gfm_dynamic_data.csv` for GFMs):
 
 ```julia
 cfg = RunConfig(
     trans_stab = true,
-    case = "9bus_gfm",
+    case = "39bus_gfm",
     load_factor = 1.0,
     solver_name = "Ipopt",
     dispatch = DispatchConfig(type_model = "ACOPF"),
     transient = TransientConfig(
         gen_dynamic_filename = "gen_dynamic_data_full.csv",
-        simulation = TsSimulationConfig(δ_tol_deg = 100.0, t_end_sim = 1.0),
+        simulation = TsSimulationConfig(δ_tol_deg = 100.0, clearing_time = 0.095, t_step = 0.005),
         dyn_model = DynModelConfig(
             allow_gfm = true,
             gen_order = DQ_4TH,
@@ -107,17 +107,17 @@ cfg = RunConfig(
             bound_style_δ = :coi_box,
             zip_load_p = (1.0, 0.0, 0.0),  # (Z, I, P) — active demand, constant impedance
             zip_load_q = (1.0, 0.0, 0.0),  # (Z, I, P) — reactive demand, constant impedance
-            fault = FaultConfig(contingency_id = 2),
+            fault = FaultConfig(contingency_id = 57),
         ),
     ),
 )
 ```
 
-The bundled case is three synchronous machines plus one converter at bus 5 with
-`Imax = 1.2` pu, so the current limiter is built rather than bypassed. Contingency 2 is a
-fault at bus 7 cleared by opening branch 5–7; a 150 ms clearing time
-(`TsSimulationConfig(clearing_time = 0.15)`) is the configuration exercised by
-`test/runtests_gfm_transient.jl`.
+The case of the paper has six synchronous machines and four converters (ids 3, 4, 5 and 6),
+all with `Imax = 1.2` pu, so the current limiter is
+built rather than bypassed. Contingency 57 is a fault at bus 23 cleared by opening branch
+23–24; `clearing_time = 0.095` on a 5 ms grid is a 100 ms fault. `runs/run_39bus.jl` holds
+the full configuration of the paper's run.
 
 The converter's variable boxes are guard-rails derived from `gfm_dynamic_data.csv` and the
 `gfm_*` margins on `TsBoundLimitsConfig`; they follow `bound_encoding` like every other
@@ -131,7 +131,7 @@ builder = TsBuilderConfig(
 )
 ```
 
-### 7.4 FULL_BUS — generator 3 trip
+### 1.5 `FULL_BUS` — generator 3 trip
 
 ```julia
 cfg = RunConfig(
@@ -153,7 +153,7 @@ cfg = RunConfig(
 )
 ```
 
-### 7.5 Custom TS builder toggles
+### 1.6 Custom TS builder toggles
 
 ```julia
 transient = TransientConfig(
@@ -168,7 +168,8 @@ transient = TransientConfig(
 Pre-fault `P`/`Q`/`P_m` init equalities are always built by the model path
 (no `TsBuilderConfig` fields). Use `mech_power_mode = USE_PG` when the swing
 equation should use `P_g` instead of an independent `P_m` (then `Pm` init is omitted).
-### 7.6 δ_tol sweep
+
+### 1.7 δ_tol sweep
 
 ```julia
 base_cfg = RunConfig(
@@ -190,13 +191,13 @@ end
 
 ---
 
-## 8. Outputs
+## 2. Outputs
 
 Each `run_case!` writes under `RESULTS/Results - <timestamp>/` (unless `overwrite_results=true`,
 which uses the flat `RESULTS/` tree with the same conditional rules).
 
 **Folder creation** happens at the start of `run_case!` via `build_results_paths` (`_common/auxiliar_functions.jl`).
-**File writes** happen after a successful solve (`OPTIMAL`, `LOCALLY_SOLVED`, or `ITERATION_LIMIT`), except
+**File writes** happen after a successful solve (`OPTIMAL`, `LOCALLY_SOLVED`, `ALMOST_LOCALLY_SOLVED` or `ITERATION_LIMIT`), except
 `Inputs/` which is populated immediately from `INPUT_FILES/<case>/`.
 
 | Subfolder | Created when (`mkpath` at run start) | Populated when |
@@ -207,17 +208,17 @@ which uses the flat `RESULTS/` tree with the same conditional rules).
 | `Dispatch/CSV/` | always | successful solve (primal dispatch CSV/XLSX/TXT) |
 | `Dispatch/model_details.txt`, `Dispatch/model_summary.txt` | always | at model build (objective, variables, constraints). Box limits appear as `ineq_const` rows when `bound_encoding = CONSTRAINT`, or as equivalent ≤-form lines from `bound_manifest` when `bound_encoding = VARIABLE`. |
 | `Dispatch/CSV_duals/` | `save_duals=true` | successful solve (JuMP primal dual CSV + `Dispatch_Duals.xlsx`) |
-| `Dispatch_WarmStart/`, `Dispatch_WarmStart/CSV/` | `save_warmstart_dispatch=true` and either FULL_BUS TSC-ACOPF or Kron TSC-DCOPF | successful pre-solve (before TS assembly); same reports as the standalone formulation |
+| `Dispatch_WarmStart/`, `Dispatch_WarmStart/CSV/` | `save_warmstart_dispatch=true` and either `FULL_BUS` TSC-ACOPF or Kron TSC-DCOPF | successful pre-solve (before TS assembly); same reports as the standalone formulation |
 | `Dispatch_WarmStart/CSV/delta_ref.csv` | `save_warmstart_dispatch=true` and Kron TSC-DCOPF | the Taylor anchor $\delta_{ref}$ the linearised $P_e$ rows expand around |
 | `Dispatch_WarmStart/CSV_duals/` | `save_warmstart_dispatch=true` and `save_duals=true` | pre-solve JuMP duals |
-| `Dispatch_WarmStart/prefault_coupling_starts.{txt,csv}` | FULL_BUS TSC-ACOPF (independent of `save_warmstart_dispatch`) | after TS assembly, before the joint solve: the `start=` values the coupling variables were seeded with |
+| `Dispatch_WarmStart/prefault_coupling_starts.{txt,csv}` | `FULL_BUS` TSC-ACOPF (independent of `save_warmstart_dispatch`) | after TS assembly, before the joint solve: the `start=` values the coupling variables were seeded with |
 | `Dispatch_Dual/` | `solve_explicit_dual=true` and `type_model` in `{"ED","DCOPF"}` | successful primal + explicit dual LP solve |
 | `Dispatch_Dual/CSV/`, `Dispatch_Dual/CSV_duals/` | same as `Dispatch_Dual/` | explicit dual LP outputs |
 | `Bus_Matrices/` | `type_model` in `{"ACOPF","DCOPF"}` and (`save_matrices=true` or `trans_stab=true`) | steady-state: Ybus/Bbus if `save_matrices`; TSC: fault/post-fault Y always when `trans_stab` |
-| `Transient_Stability/CSV/` | `trans_stab=true` | successful TSC solve (classical + FULL_BUS trajectories) |
-| `Transient_Stability/CSV/electrical_reactive_power.csv` | Kron TSC-ACOPF (`expressions[:Qe_tf]`) or FULL_BUS (`vars[:Qe_tf]`) | per-generator $Q_e(t)$ [MVAr] |
+| `Transient_Stability/CSV/` | `trans_stab=true` | successful TSC solve (classical + `FULL_BUS` trajectories) |
+| `Transient_Stability/CSV/electrical_reactive_power.csv` | Kron TSC-ACOPF (`expressions[:Qe_tf]`) or `FULL_BUS` (`vars[:Qe_tf]`) | per-generator $Q_e(t)$ [MVAr] |
 | `Transient_Stability/CSV/generator_*.csv` | `network_form=FULL_BUS` | per-generator $P_e, Q_e$ |
-| `Transient_Stability/CSV/generator_internal_voltage.csv` | classical models (`gen_order=CLASSICAL_2ND`), Kron **and** FULL_BUS | pre-fault internal EMF magnitude $E$ per generator |
+| `Transient_Stability/CSV/generator_internal_voltage.csv` | classical models (`gen_order=CLASSICAL_2ND`), Kron **and** `FULL_BUS` | pre-fault internal EMF magnitude $E$ per generator |
 | `Transient_Stability/CSV/bus_*.csv` | `network_form=FULL_BUS` | nodal $P, Q, V, \theta$ trajectories |
 | `Transient_Stability/CSV/total_energy.csv` | `trans_stab=true` | $V_e = V_{ke} + V_{pe}$ per SG, alongside `kinetic_energy.csv` / `potential_energy.csv` |
 | `Transient_Stability/CSV/dq_*.csv` | `gen_order=DQ_4TH` | $E_d, E_q, I_d, I_q, T_e, E_{fd}$ and the terminal $V_d, V_q$ trajectories |
@@ -251,7 +252,7 @@ primal / dual status of the solve that produced them.
 expression, so `electrical_reactive_power.csv` is absent there by construction — not a
 missing export.
 
-### 8.0 `run_manifest.toml` — reading a run back with a script
+### 2.1 `run_manifest.toml` — reading a run back with a script
 
 `input_parameters.txt` is written for people, and it does not record `load_factor`;
 `Inputs/bus_data.csv` archives the demand *before* that scaling is applied
@@ -278,7 +279,7 @@ writer. Greek field names are transliterated on the way out (`δ_tol` → `delta
 Fields with no serialisable value are omitted rather than written as a placeholder:
 `nothing`, and callbacks such as `post_solve_hook`.
 
-### 8.1 Export flags
+### 2.2 Export flags
 
 There is no master "save everything" switch. What a run writes is decided by the flags
 below plus the model-shape gates (`network_form`, `gen_order`, `include_avr`,
@@ -291,7 +292,7 @@ below plus the model-shape gates (`network_form`, `gen_order`, `include_avr`,
 | `save_ts_plots` | `RunConfig` | `false` | `Transient_Stability/Figures/` and `Figures_Duals/`; requires the Plots extension |
 | `save_ts_debug_csv` | `RunConfig` | `false` | `Transient_Stability/CSV/Debug/` |
 | `save_optim_matrices` | `RunConfig` | `false` | `Optim_Matrices/` (steady-state only; forced off for TSC runs) |
-| `save_warmstart_dispatch` | `RunConfig` | `false` | `Dispatch_WarmStart/` (FULL_BUS TSC-ACOPF only) |
+| `save_warmstart_dispatch` | `RunConfig` | `false` | `Dispatch_WarmStart/` (`FULL_BUS` TSC-ACOPF only) |
 | `run_script` | `RunConfig` | `nothing` | Copy of the configuring `.jl` file in the run-folder root; set it to `@__FILE__` in the run script |
 | `solve_explicit_dual` | `DispatchConfig` | `false` | `Dispatch_Dual/` (ED / DC-OPF only) |
 
@@ -299,21 +300,21 @@ below plus the model-shape gates (`network_form`, `gen_order`, `include_avr`,
 their toggles change the model, and therefore which files have content to hold, but never
 whether an existing quantity is written.
 
-**MATPOWER import** (`Import_Matpower_Case`) creates only `Results - <ts>/Inputs/` — see §6.1.
+**MATPOWER import** (`Import_Matpower_Case`) creates only `Results - <ts>/Inputs/` — see [Parameter reference §6.1](parameter_reference.md).
 
-### 8.2 Solver logs
+### 2.3 Solver logs
 
 Each run writes optimiser text logs at the **timestamped run root** (alongside `input_parameters.txt`):
 
 | File | When written |
 |---|---|
 | `solver_log.txt` | Main solve (steady-state OPF or full TSC problem) |
-| `solver_log_warmstart.txt` | Optional pre-solves only: DCOPF steady-state before TSC-DCOPF, or FULL_BUS ACOPF warm start before TSC assembly |
+| `solver_log_warmstart.txt` | Optional pre-solves only: DCOPF steady-state before TSC-DCOPF, or `FULL_BUS` ACOPF warm start before TSC assembly |
 
 Logs are configured via `set_solver_log_path!` (`_manage_inputs/functions_2_setup_optim.jl`):
 Ipopt/MadNLP/PARDISO use `output_file`; Gurobi uses `LogFile`; HiGHS uses `log_file`.
 
-### 8.2.1 PARDISO on Windows (optional)
+### 2.3.1 PARDISO on Windows (optional)
 
 For large ACOPF / TSC-ACOPF KKT systems, you can use Intel MKL PARDISO as Ipopt's
 linear solver instead of the default MUMPS:
@@ -338,7 +339,7 @@ Requirements:
 `"Ipopt-pardiso"` is an Ipopt backend (`is_ipopt_backend_solver`); all other `IpoptSolverConfig`
 fields (tolerances, `max_iter`, Hessian mode) apply as for `solver_name = "Ipopt"`.
 
-### 8.2.2 MadNLP + HSL (optional)
+### 2.3.2 MadNLP + HSL (optional)
 
 MadNLP can use HSL via `MadNLPHSL`. `solver_name` is namespaced so NLP solver and
 linear engine stay explicit (`"Ipopt-ma57"` vs `"MadNLP-ma57"`). Pardiso remains
@@ -392,7 +393,7 @@ Notes:
     release — use the saved CSV/TXT outputs. In batch loops, discard the result tuple
     between iterations so nothing pins the emptied model.
 
-### 8.3 Dual variable exports
+### 2.4 Dual variable exports
 
 !!! warning "Sign convention — the easiest place to get an economic reading backwards"
     Inequalities are coded as `(LHS − RHS) ≤ 0`, so `JuMP.dual()` on an *active*
@@ -437,14 +438,22 @@ generator-bound CSVs use `Gen_ID` and the `k→i` / angle-upper families carry t
 
 **Transient — `Transient_Stability/OPF_Duals_Results.xlsx`**
 
+Each sheet is named after its registry export with the `dual_` prefix dropped and `_Duals`
+appended (`dual_δ_COI_upper` → `δ_COI_upper_Duals`). The names keep the Greek letters.
+
 | Sheet | Constraint family |
 |---|---|
 | `Pe_init_Duals` | Initial P–δ–E link |
-| `delta_COI_Duals` | COI angle definition |
-| `Pe_duals` | Electrical power during transient |
-| `delta_Duals` | Rotor angle (trapezoidal) |
-| `Delta_Omega_Duals` | Speed deviation (swing) |
-| `delta_COI_Lower_Duals` / `delta_COI_Upper_Duals` | δ w.r.t. COI stability bounds |
+| `δCOI_Duals` | COI angle definition |
+| `Pe_Duals` | Electrical power during transient |
+| `δ_Duals` | Rotor angle (trapezoidal) |
+| `Δω_Duals` | Speed deviation (swing) |
+| `δ_COI_lower_Duals` / `δ_COI_upper_Duals` | δ w.r.t. COI stability bounds |
+| `δ_ref_lower_Duals` / `δ_ref_upper_Duals` | δ w.r.t. a reference machine (`:highest_H`, `:ref_gen`) |
+| `δ_pair_lower_Duals` / `δ_pair_upper_Duals` | pairwise δ separation (`:pairwise`) |
+
+The CSV files under `Transient_Stability/CSV_duals/` use ASCII names instead
+(`dual_delta_COI_upper.csv`, `dual_Delta_Omega.csv`, …), except the box families below.
 
 Optional box families (`TsBuilderConfig.bound_*`) export under their own names on both
 windows — `dual_LB_δ_tf` / `dual_UB_δ_tf`, and the same pattern for `Δω`, `Pe`, `Qe`,
@@ -454,9 +463,7 @@ integration step, the raw and clipped Q–V PI states, the current limiter, `Pe`
 the pre-fault `δ` / `P_set` boxes.
 
 Every one of these is available on **GL and OB** disturbances too. Those build a single
-window, and the export gate used to require a post-fault key that single-window runs never
-create — so a GL or OB run silently produced no stability duals at all. Presence is now
-decided by the fault-on key alone and the exported series simply covers one window.
+window, and the exported series covers that one window.
 
 Authoritative mapping: `_transient_stability/DynDualRegistry.jl` (the three `*_DUAL_SPECS`
 constants).
@@ -465,32 +472,33 @@ constants).
 names what its rows and columns are:
 
 - per-generator trajectories use `Gen_<id>` headers, per-**bus** ones use `Bus_<id>`.
-  The nodal families (`dual_Pbalance.csv`, `dual_Qbalance.csv`, `dual_V_lower.csv`, …)
-  used to be labelled `Gen_1 … Gen_9` as well, which read as if bus 4 were a generator.
+  The nodal families are `dual_Pbalance.csv`, `dual_Qbalance.csv`, `dual_V_lower.csv`, ….
 - the one-value-per-generator files (`dual_Pe_init.csv`, `dual_Pm_init.csv`, the
   `dual_LB_*` / `dual_UB_*` boxes) carry a leading `Gen_ID` column, and the merged
-  time series (`dual_delta_COI.csv`, …) carry a running `Index`. Previously those files
-  had no id column at all, so the only way to attribute a row was its position — and
-  positions do not line up between families: on a mixed fleet `dual_Pe_init.csv` spans
-  SG **and** converters while `dual_Pe.csv` spans the machines alone.
-
-Readers that select by column name are unaffected by the addition.
+  time series (`dual_delta_COI.csv`, …) carry a running `Index`. Select rows by these id
+  columns, not by position: positions do not line up between families. On a mixed fleet
+  `dual_Pe_init.csv` spans SG **and** converters while `dual_Pe.csv` spans the machines alone.
 
 ---
 
-## 9. Validation before solve
+## 3. Validation before solve
 
 `run_case!` calls, in order:
 
 1. `Check_Coherence_Input_Data` — model/solver pairing  
-2. `validate_run_config!` — dispatch + transient consistency  
-3. `validate_dyn_config!` — `DynModelConfig` rules  
-4. `validate_fault_config!` — disturbance vs network (when `trans_stab=true`)  
-5. `validate_δ_reference!` — the reference machine of a `:highest_H` / `:ref_gen` δ corridor against the actual generator data, and the two-survivor requirement shared with `:pairwise` (when `trans_stab=true`)
+2. `validate_run_config!` — dispatch + transient consistency; calls `validate_dispatch_config!` and, when `trans_stab=true`, `validate_dyn_config!` (`DynModelConfig` rules)  
+
+When `trans_stab=true`, then:
+
+3. `validate_fault_config!` — disturbance vs network, for the main fault and each of `transient.extra_contingency_ids`  
+4. `validate_dyn_data!` — the machine CSV has every column the selected model needs  
+5. `validate_δ_reference!` — the reference machine of a `:highest_H` / `:ref_gen` δ corridor against the actual generator data, and the two-survivor requirement shared with `:pairwise`  
+6. `validate_all_gfm_fleet!` — the extra rules for a converter-only fleet (no-op otherwise)  
+7. `validate_gfm_dispatch_band!` — each converter's `DGEN` P/Q interval sits inside its `DGFM` band (mixed fleets only)
 
 ---
 
-## 10. Quick lookup — where do I change X?
+## 4. Quick lookup — where do I change X?
 
 | I want to change… | Edit… |
 |---|---|
@@ -499,13 +507,13 @@ Readers that select by column name are unaffected by the addition.
 | DC branch susceptance (`1/x` vs PowerModels) | `RunConfig.dispatch.susceptance_model` |
 | δ_tol, simulation timing, f_syn | `RunConfig.transient.simulation` |
 | Which TS constraints are built | `RunConfig.transient.builder` (`TsBuilderConfig`) |
-| Kron vs FULL_BUS, ZIP loads, P_m mode | `RunConfig.transient.dyn_model` |
+| Kron vs `FULL_BUS`, ZIP loads, P_m mode | `RunConfig.transient.dyn_model` |
 | AVR / governor on, valve limiter | `RunConfig.transient.dyn_model` — physics in [Part I §8](model/08_controls_avr_governor.md) |
 | Grid-forming fleet on, converter data file | `dyn_model.allow_gfm`, `transient.gfm_dynamic_filename` — physics in [Part I §9](model/09_grid_forming.md) |
 | SC vs GL vs OB, which gen/load/branch trips | `RunConfig.transient.dyn_model.fault` |
 | Which bus/line faults (SC) | `contingencies.csv` + `fault.contingency_id` |
 | Network topology, costs, limits | CSV files in `INPUT_FILES/<case>/` |
 | Several loads on one bus, each with its own ZIP split | `load_data.csv` in the case folder ([parameter reference §6.2](parameter_reference.md#62-load_datacsv--several-loads-on-one-bus-each-with-its-own-zip-split)) |
-| Use a MATPOWER `.m` directly (no CSV conversion) | `RunConfig.matpower_file = "case.m"` (§6.1.1) |
-| Convert a MATPOWER `.m` to in-house CSVs | `Import_Matpower_Case(path_m)` (§6.1.2) |
+| Use a MATPOWER `.m` directly (no CSV conversion) | `RunConfig.matpower_file = "case.m"` ([Parameter reference §6.1.1](parameter_reference.md)) |
+| Convert a MATPOWER `.m` to in-house CSVs | `Import_Matpower_Case(path_m)` ([Parameter reference §6.1.2](parameter_reference.md)) |
 | Everything at once, explicitly | [Complete example](complete_example.md) — every field of every struct |

@@ -27,11 +27,13 @@ Then `julia --project=TSCOPF` starts a session where `using TSCOPF` works.
 
 The runs of the paper use **Ipopt**. No Gurobi license is required.
 
-!!! warning "Solver ↔ formulation pairing is enforced, not a suggestion"
-    `run_case!` calls `Check_Coherence_Input_Data` before building anything: an
-    ACOPF or TSC-ACOPF run with `solver_name = "Gurobi"` or `"HiGHS"` (LP/MILP
-    solvers) throws immediately, and likewise a DCOPF/ED run with Ipopt/MadNLP.
-    See the solver-compatibility table in the [Parameter reference](parameter_reference.md).
+!!! warning "Which pairings are enforced"
+    `run_case!` calls `Check_Coherence_Input_Data` before building anything. It
+    throws on an ACOPF or TSC-ACOPF run with `solver_name = "Gurobi"` or `"HiGHS"`
+    (LP/MILP solvers), on a UC run with any solver other than Gurobi, and on
+    `trans_stab = true` with ED or UC. A DCOPF or ED run with Ipopt or MadNLP is
+    **not** rejected: it solves the LP with the NLP solver. See the
+    solver-compatibility table in the [Parameter reference](parameter_reference.md).
 
 ## Build these docs locally
 
@@ -45,7 +47,7 @@ julia --project=TSCOPF/docs --color=yes TSCOPF/docs/make.jl
 Open `TSCOPF/docs/build/index.html` in a browser.
 
 !!! tip
-    `docs/parameter_reference.md`, `docs/running_a_case.md`, and `docs/configuration_map.md` are the
-    single source of truth for those pages — `make.jl` copies them into
+    `docs/parameter_reference.md`, `docs/running_a_case.md`, `docs/configuration_map.md` and
+    `docs/dynamic_controls_avr_governor.md` are the single source of truth for those pages — `make.jl` copies them into
     `docs/src/` at build time. Edit the top-level `docs/*.md` files, not the
     copies under `docs/src/` (those are gitignored and get overwritten).

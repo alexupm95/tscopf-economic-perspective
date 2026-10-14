@@ -9,7 +9,7 @@ Field-by-field reference for **RunConfig**, **DispatchConfig**, **TransientConfi
 
 ## 1. `RunConfig` — orchestration
 
-Edit in **`main.jl`** (single scenario) or **`main_loop.jl`** (δ_tol sweep).  
+Set in the run script (`runs/run_9bus.jl`, `runs/run_39bus.jl` in this repository).  
 Defaults: `engine.jl` (`Base.@kwdef struct RunConfig`).
 
 These fields apply to **both** plain OPF and TSC runs.
@@ -33,28 +33,33 @@ These fields apply to **both** plain OPF and TSC runs.
 | `save_matrices` | `Bool` | `true` | Steady-state only: write Ybus/Bbus XLSX to `Bus_Matrices/` when `type_model` is ACOPF or DCOPF. Ignored for ED and UC. TSC fault/post-fault matrices are always exported when `trans_stab=true` (folder created when `trans_stab` or steady-state `save_matrices` on ACOPF/DCOPF). |
 | `save_ts_plots` | `Bool` | `false` | TSC only: trajectory SVG figures under `Transient_Stability/Figures/`, plus the stability-corridor dual figures under `Figures_Duals/` (δ and Δω, whichever styles the run built) when `save_duals` is also on (opt-in; uses Plots.jl). CSV/TXT transient results are still saved when `trans_stab=true`. On a headless machine `load_plots_extension!` sets `GKSwstype=100` so GR writes to file instead of failing to open a window. |
 | `save_ts_debug_csv` | `Bool` | `false` | TSC only: per-(window, generator, step) diagnostic dumps under `Transient_Stability/CSV/Debug/` — value, distance to the limit and dual on one row. Writes `gfm_filter_debug.csv`, `gfm_limiter_debug.csv`, `gfm_voltage_debug.csv` (mixed-fleet runs) and `swing_debug.csv`. Opt-in: the filter file alone is three rows per converter per step. **`swing_debug.csv` uses the Greek variable names of the model (`δ_curr`, `Δω_step`, …) in its header.** The file is UTF-8 without a BOM, so opening it by double-click in Excel decodes it as ANSI and mangles those names; import it instead (Data → From Text/CSV → 65001 Unicode UTF-8). Every other exported CSV uses ASCII headers. |
-| `save_warmstart_dispatch` | `Bool` | `false` | TSC runs that pre-solve a steady-state OPF before assembling the dynamics: writes that solution to `Dispatch_WarmStart/` (same reports as `Dispatch/`; dual export follows `save_duals`). Two such paths — **FULL_BUS TSC-ACOPF** (the mandatory ACOPF warm start) and **Kron TSC-DCOPF** (the DC solve that fixes the Taylor anchor, which also writes `CSV/delta_ref.csv`). Throws on Kron TSC-ACOPF, which solves once jointly and has no pre-solve, and on steady-state runs. |
+| `save_warmstart_dispatch` | `Bool` | `false` | TSC runs that pre-solve a steady-state OPF before assembling the dynamics: writes that solution to `Dispatch_WarmStart/` (same reports as `Dispatch/`; dual export follows `save_duals`). Two such paths — **`FULL_BUS` TSC-ACOPF** (the mandatory ACOPF warm start) and **Kron TSC-DCOPF** (the DC solve that fixes the Taylor anchor, which also writes `CSV/delta_ref.csv`). Throws on Kron TSC-ACOPF, which solves once jointly and has no pre-solve, and on steady-state runs. |
 | `run_script` | `String` or `nothing` | `nothing` | Archive the script that configured the run. Set it to `@__FILE__` inside the run script and `run_case!` copies that `.jl` file, byte for byte, into the run-folder root next to `input_parameters.txt` and `solver_log.txt` — so a `RESULTS/` folder carries the exact configuration that produced it, comments included. Any readable path is accepted (a sweep driver can archive itself); a path that is not an existing file throws in `validate_run_config!`, before any model is built. The copy is written right after the folder is created, so it survives a failed or iteration-limited solve. Sweeps that call `run_case!` per `reconfigure`d iteration get one copy per timestamped folder. |
 | `post_solve_hook` | `Function` or `nothing` | `nothing` | Called once, with the model still assembled, immediately before `release_solver_backend!` invalidates every `VariableRef`/`ConstraintRef` — the last point at which a caller can read duals or variable values off the live model. Receives **keyword arguments only** (`cfg`, `sys`, `path_names`, `model`, `opf_dict`, `dyn_model_dict`, `dyn_parameters_dict`, `status`, `status_solved`, `obj_MVA`, `t_build`, `t_solve`), so declare it as `f(; kwargs...)` and pick out what you need; more data may be handed over in future versions without breaking a hook written today. Runs on failed solves too — gate on `status_solved` if that matters. Exceptions propagate: an export that failed silently is worse than a run that stopped and said so. |
 | `dispatch` | `DispatchConfig` | `DispatchConfig()` | Avenue 1 — see §2 |
 | `transient` | `TransientConfig` or `nothing` | `nothing` | Avenue 2 — see §3; **required** when `trans_stab=true` |
+| `matpower_file` | `String` or `nothing` | `nothing` | Read the steady-state data from a MATPOWER `.m` file instead of the case CSVs — see §6.1.1 |
 
 ### Solver compatibility (enforced automatically)
 
-Checked via `Check_Coherence_Input_Data(trans_stab, dispatch.type_model, solver_name)`.
+Checked via `Check_Coherence_Input_Data(trans_stab, dispatch.type_model, solver_name)`. Only the
+pairings marked "rejected" throw; the rest is the recommended choice.
 
-| `dispatch.type_model` | Allowed `solver_name` | Notes |
+| `dispatch.type_model` | Recommended `solver_name` | Rejected |
 |---|---|---|
-| `"ACOPF"` | Ipopt, MadNLP (+ HSL aliases); Pardiso via `"Ipopt-pardiso"` only | Nonlinear AC — **not** Gurobi/HiGHS |
-| `"DCOPF"` | Gurobi, HiGHS | Linear DC OPF |
-| TSC-ACOPF | Ipopt / MadNLP (+ `Ipopt-*` / `MadNLP-*` HSL); `"Ipopt-pardiso"` | `trans_stab=true` + `"ACOPF"` |
-| TSC-DCOPF | Gurobi, HiGHS | `trans_stab=true` + `"DCOPF"` |
+| `"ACOPF"` (also TSC-ACOPF) | Ipopt, MadNLP (+ `Ipopt-*` / `MadNLP-*` HSL aliases); Pardiso via `"Ipopt-pardiso"` only | Gurobi, HiGHS (nonlinear AC needs an NLP solver) |
+| `"DCOPF"` (also TSC-DCOPF) | HiGHS, Gurobi | nothing — Ipopt/MadNLP also solve it |
+| `"ED"` | HiGHS, Gurobi | nothing — Ipopt/MadNLP also solve it; `trans_stab=true` is rejected |
+| `"UC"` | Gurobi | every solver but Gurobi (MILP); `trans_stab=true` is rejected |
+
+The `Ipopt-ma57` / `Ipopt-ma97` and `MadNLP-ma57` / `MadNLP-ma97` aliases also throw when
+`HSL_jll` (or `MadNLPHSL`) is not installed, and `"Ipopt-pardiso"` throws without a PARDISO library path.
 
 ### 1.1 `IpoptSolverConfig` — NLP solver knobs
 
 Set on `RunConfig.ipopt` (or pass to `Setup_Optim_Model`). Used when
 `solver_name` is `"Ipopt"`, an Ipopt+HSL linear solver (`"Ipopt-ma57"`, `"Ipopt-ma97"`), or
-`"Ipopt-pardiso"`. Replaces the legacy `config_file.jl` Ipopt block. Log paths are **not** here:
+`"Ipopt-pardiso"`. Log paths are **not** here:
 `run_case!` sets `output_file` to `RESULTS/.../solver_log.txt` at solve time.
 
 | Field | Type | Default | Description |
@@ -301,7 +306,7 @@ Two ways to obtain dual information after a dispatch solve:
 
 Quadratic primal cost → use `save_duals` on the primal NLP/QP instead.
 
-**Safe defaults:** `solve_explicit_dual` defaults to `false`, so new users running the stock `main.jl` / smoke tests are unaffected.
+`solve_explicit_dual` defaults to `false`.
 
 **Example (ED, dispatch-only, 9-bus):**
 
@@ -345,6 +350,11 @@ transient = TransientConfig(
 )
 ```
 
+`TransientConfig.extra_contingency_ids` (`Vector{Int}`, default `Int[]`) adds further
+short-circuit contingencies — rows of `contingencies.csv` — to the same optimisation, on the
+same pre-fault operating point as `dyn_model.fault`. Each one adds its own transient block,
+and its results go to `Transient_Stability_c<id>/`.
+
 ### 3.1 `TsSimulationConfig` — timing and stability limits
 
 | Field | Type | Default | Description |
@@ -357,7 +367,7 @@ transient = TransientConfig(
 | `t_end_sim` | `Float64` | `5.0` | Simulation horizon [s] |
 | `t_step` | `Float64` | `0.01` | Trapezoidal time step [s] |
 | `t_start_fault` | `Float64` | `0.01` | Disturbance application [s] |
-| `clearing_time` | `Float64` | `0.3` | SC fault duration before clearing [s] |
+| `clearing_time` | `Float64` | `0.3` | SC fault duration before clearing [s]. The fault-on network still holds at the clearing sample, so the fault effectively lasts `clearing_time + t_step` (a 100 ms fault on a 5 ms grid is `0.095`) |
 | `f_syn` | `Float64` | `50.0` | Synchronous frequency [Hz] |
 | `Δω_0` | `Float64` | `0.0` | Initial speed deviation [p.u.] |
 
@@ -385,27 +395,27 @@ Fault- and post-fault-window equalities (swing, Pe, COI, nodal balance) are like
 | `bound_E`, `bound_δ`, `bound_P_m` | `false` | Pre-fault explicit bound inequalities |
 | `bound_δ_tf`, `bound_Δω_tf`, `bound_Pe_tf`, `bound_Qe_tf`, `bound_δCOI_tf` | `false` | Optional fault-window explicit bounds |
 | `bound_δ_tpf`, `bound_Δω_tpf`, `bound_Pe_tpf`, `bound_Qe_tpf`, `bound_δCOI_tpf` | `false` | Optional post-fault explicit bounds |
-
-Each family above exports one dual CSV per side and per window pair —
-`dual_LB_δ_tf.csv` / `dual_UB_δ_tf.csv`, and likewise for `Δω`, `Pe`, `Qe` (per generator)
-and `δCOI` (a COI scalar per time step). The `_tf` file name covers both windows: the
-series is the fault window followed by the post-fault window, exactly as `dual_Pe.csv` is.
-The dq boxes `Ed`, `Eq`, `Id`, `Iq`, `Te` follow the same rule.
 | `bound_Ed`, `bound_Eq`, `bound_Id`, `bound_Iq` | `false` | DQ pre-fault algebraic boxes |
 | `bound_V_ref`, `bound_P_ref` | `false` | AVR / governor set-point boxes |
 | `bound_Ed_tf` … `bound_Te_tf` (+ `_tpf`) | `false` | DQ machine-state tf/tpf boxes |
 | `bound_E_fd_unlim_tf`, `bound_E_fd_unlim_tpf` | `false` | AVR research boxes on `E_fd_unlim` |
 | `bound_Pv_tf`, `bound_Pv_tpf`, `bound_Pm_tf`, `bound_Pm_tpf` | `false` | Governor research boxes (independent of `governor_limiter`) |
+| `bound_gfm_δ`, `bound_gfm_{P_meas,Q_meas,V_meas,E_int_raw,E_int,E_droop_raw,E_droop,Id,Iq}_{tf,tpf}`, `bound_gfm_pq_{raw,clip}_{tf,tpf}` | `true` | GFM converter guard-rail boxes (see below); read only when `allow_gfm` |
 | `limits` | `TsBoundLimitsConfig()` | Limit values for the bounds above (see below) |
 | `bound_encoding` | `CONSTRAINT` | How box limits attach (`CONSTRAINT` vs `VARIABLE`) |
 
+Each trajectory box family exports one dual CSV per side and per window pair —
+`dual_LB_δ_tf.csv` / `dual_UB_δ_tf.csv`, and likewise for `Δω`, `Pe`, `Qe` (per generator)
+and `δCOI` (a COI scalar per time step). The `_tf` file name covers both windows: the
+series is the fault window followed by the post-fault window, exactly as `dual_Pe.csv` is.
+The dq boxes `Ed`, `Eq`, `Id`, `Iq`, `Te` follow the same rule. The pre-fault boxes drop the
+suffix: `bound_δ` writes `dual_LB_δ.csv` / `dual_UB_δ.csv`.
+
 **`TsBoundLimitsConfig`** (`builder.limits`): physical defaults — `E` [0, 2] pu, `δ` [-π, π], `P_m` from `DGEN` (`P_m_source = :dgen_pg_limits`), FullBus `V_bus_min_pu = 0` (forced on `V_tf`/`V_tpf`), governor valve `[gov_valve_min_pu, pg_max/base_MVA]` when `include_governor` and limiter ≠ `GOV_NO_LIMIT`. Optional tf/tpf `TsBoundLimitPair` fields default to `(-Inf, Inf)` = inactive (not `±9999`). `VARIABLE` encoding omits JuMP bounds; `CONSTRAINT` omits the ≤-row — Inf never enters an explicit inequality. Toggle on + Inf is a no-op until you set finite limits. DQ pre-fault `Ed/Eq/Id/Iq` and AVR `V_ref` have finite defaults when their toggles are on.
 
-**GFM box knobs** (`builder.limits`, read only when `allow_gfm`): `gfm_δ_min_rad`/`gfm_δ_max_rad` (±π), `gfm_V_meas_min_pu`/`gfm_V_meas_max_pu` (0 / 2.5), `gfm_E_raw_extra_pu` (0.25), `gfm_E_raw_slack_pu` (0.5), `gfm_E_clip_slack_pu` (0.05), `gfm_PQ_bound_scale` (1.5), `gfm_PQ_bound_offset_pu` (0.05), `gfm_P_meas_floor_pu`/`gfm_Q_meas_floor_pu` (3.0), `gfm_I_floor_pu`/`gfm_I_ceiling_pu` (5.0 / 20.0), `gfm_pq_raw_span_pu` (20), `gfm_pq_clip_slack_pu` (0.05). These are margins and floors, not final numbers: `resolve_gfm_bound_limits` derives the per-unit box from them plus the `DGFM` row. The P and Q *measurement* boxes are solver guard-rails, not device ratings. Each box has a `TsBuilderConfig` toggle — `bound_gfm_δ` plus `bound_gfm_{P_meas,Q_meas,V_meas,E_int_raw,E_int,E_droop_raw,E_droop,Id,Iq}_{tf,tpf}`, and `bound_gfm_pq_{raw,clip}_{tf,tpf}` for the overload states — which unlike the SG `bound_*` families default to **`true`**, since the nonconvex limiter needs the guard-rails. They follow `bound_encoding`. The dispatch range on a converter is the `DGEN` box (`pg_min`/`pg_max`, `qg_min`/`qg_max`). `DGFM.Pmin`/`Pmax`/`Qmin`/`Qmax` are comparator inputs to the overload PIs and do not box `P_set`. `validate_gfm_dispatch_band!` requires the `DGEN` interval to sit inside the `DGFM` band. Defaults reproduce the values the reference port hard-coded. The smoothing constants `_GFM_EPS_E`, `_GFM_PQLIM_EPS_STEP_FRAC` and `_GFM_PQLIM_OUT_ERR_TOL` (overload state-clip ε as a fraction of one integrator step, output-clip ε as `Kp` × an error tolerance; both resolved per converter and axis into `run_manifest.toml`), `_GFM_EPS_NORM_V`, `_GFM_EPS_LIM_I` and the bypass threshold `_GFM_IMAX_NO_LIMIT` are module constants, not configuration. They live in `src/_transient_stability/numerics.jl` with the AVR and governor smoothing constants. They are `const`, so restart Julia after editing one: a live session, Revise included, keeps the compiled value.
+**GFM box knobs** (`builder.limits`, read only when `allow_gfm`): `gfm_δ_min_rad`/`gfm_δ_max_rad` (±π), `gfm_V_meas_min_pu`/`gfm_V_meas_max_pu` (0 / 2.5), `gfm_E_raw_extra_pu` (0.25), `gfm_E_raw_slack_pu` (0.5), `gfm_E_clip_slack_pu` (0.05), `gfm_PQ_bound_scale` (1.5), `gfm_PQ_bound_offset_pu` (0.05), `gfm_P_meas_floor_pu`/`gfm_Q_meas_floor_pu` (3.0), `gfm_I_floor_pu`/`gfm_I_ceiling_pu` (5.0 / 20.0), `gfm_pq_raw_span_pu` (20), `gfm_pq_clip_slack_pu` (0.05). These are margins and floors, not final numbers: `resolve_gfm_bound_limits` derives the per-unit box from them plus the `DGFM` row. The P and Q *measurement* boxes are solver guard-rails, not device ratings. Each box has a `TsBuilderConfig` toggle — `bound_gfm_δ` plus `bound_gfm_{P_meas,Q_meas,V_meas,E_int_raw,E_int,E_droop_raw,E_droop,Id,Iq}_{tf,tpf}`, and `bound_gfm_pq_{raw,clip}_{tf,tpf}` for the overload states — which unlike the SG `bound_*` families default to **`true`**, since the nonconvex limiter needs the guard-rails. They follow `bound_encoding`. The dispatch range on a converter is the `DGEN` box (`pg_min`/`pg_max`, `qg_min`/`qg_max`). `DGFM.Pmin`/`Pmax`/`Qmin`/`Qmax` are comparator inputs to the overload PIs and do not box `P_set`. `validate_gfm_dispatch_band!` requires the `DGEN` interval to sit inside the `DGFM` band. The smoothing constants `_GFM_EPS_E`, `_GFM_PQLIM_EPS_STEP_FRAC` and `_GFM_PQLIM_OUT_ERR_TOL` (overload state-clip ε as a fraction of one integrator step, output-clip ε as `Kp` × an error tolerance; both resolved per converter and axis into `run_manifest.toml`), `_GFM_EPS_NORM_V`, `_GFM_EPS_LIM_I` and the bypass threshold `_GFM_IMAX_NO_LIMIT` are module constants, not configuration. They live in `src/_transient_stability/numerics.jl` with the AVR and governor smoothing constants. They are `const`, so restart Julia after editing one: a live session, Revise included, keeps the compiled value.
 
-Full toggle inventory and “wired vs forced” notes: `OUTPUTS/reference/constraint_toggle_map.md`.
-
-Flip these in `main.jl` under `transient.builder` (the `TsBuilderConfig` struct).
+Set these on `transient.builder` (the `TsBuilderConfig` struct) in the run script.
 
 ### 3.3 `gen_dynamic_filename` / `gfm_dynamic_filename`
 
@@ -422,7 +432,7 @@ Flip these in `main.jl` under `transient.builder` (the `TsBuilderConfig` struct)
 - `gen_dynamic_data*.csv` — **SG rows only** (optional `id` column; required when SG ids are not `1:n_sg`)
 - `gfm_dynamic_data.csv` — **GFM rows only**; see the column table below
 
-Every `DGEN.id` must appear in exactly one of the two dynamic files. Example case: `INPUT_FILES/9bus_gfm/`. Phases G0–G2 implement ingest, init/ACOPF limits, and transient GFM dynamics. The physics behind each column is in [Part I §9 — Grid-forming inverters](model/09_grid_forming.md).
+Every `DGEN.id` must appear in exactly one of the two dynamic files. Example case: `INPUT_FILES/39bus_gfm/`. The physics behind each column is in [Part I §9 — Grid-forming inverters](model/09_grid_forming.md).
 
 | Column | Required | Meaning |
 |---|---|---|
@@ -434,9 +444,9 @@ Every `DGEN.id` must appear in exactly one of the two dynamic files. Example cas
 | `Kpv`, `Kiv` | yes | Q–V PI proportional and integral gains |
 | `Emax`, `Emin` | yes | Internal-voltage clip, and the ACOPF-side internal-voltage limit |
 | `Pmax`, `Pmin` | yes | Active-power device rating. Comparator inputs to the P overload PI when `gfm_pq_overload` is on. Not a box on `P_set` — `DGEN` owns the dispatch range, and it must sit inside this band |
-| `TPf`, `TQf`, `TVf` | yes | Measurement-filter time constants for the $P$, $Q$ and $V$ channels (REGFM_A1 eq. 4–6), independent of one another; `0` means unfiltered (pass-through). A legacy single `Tf` column is still accepted in their place and is broadcast into all three, so case folders and archived `RESULTS/*/Inputs/` copies written before the split keep loading. Only `TPf` feeds the COI weight $H^{\mathrm{eff}} = T_{Pf}/(2 m_p)$ used by `gfm_in_coi` |
-| `Imax` | yes | Current-limiter threshold **for the transient only** — brief overcurrent up to the junction thermal limit (e.g. 1.2 pu). The steady-state ACOPF circle uses the nameplate rating instead (decision D4, [Part I §9](model/09_grid_forming.md)). **A value ≥ 20 disables the limiter entirely** (`_GFM_IMAX_NO_LIMIT`), removing those rows from the model rather than merely relaxing them; bypassed units are logged and recorded on `meta[:gfm_limiter_bypassed]` |
-| `Qmax`, `Qmin` | yes | Reactive-power device rating (REGFM_A1 Table 1, `VFlag = 1`: `±0.44` pu on inverter base). Comparator inputs to the Q overload PI. Divided by `base_ratio` like `Pmax`/`Pmin`. Not a second box on `Q_g` |
+| `TPf`, `TQf`, `TVf` | yes | Measurement-filter time constants for the $P$, $Q$ and $V$ channels (`REGFM_A1` eq. 4–6), independent of one another; `0` means unfiltered (pass-through). A legacy single `Tf` column is still accepted in their place and is broadcast into all three. Only `TPf` feeds the COI weight $H^{\mathrm{eff}} = T_{Pf}/(2 m_p)$ used by `gfm_in_coi` |
+| `Imax` | yes | Current-limiter threshold **for the transient only** — brief overcurrent up to the junction thermal limit (e.g. 1.2 pu). The steady-state ACOPF circle uses the nameplate rating instead ([Part I §9](model/09_grid_forming.md)). **A value ≥ 20 disables the limiter entirely** (`_GFM_IMAX_NO_LIMIT`), removing those rows from the model rather than merely relaxing them; bypassed units are logged and recorded on `meta[:gfm_limiter_bypassed]` |
+| `Qmax`, `Qmin` | yes | Reactive-power device rating (`REGFM_A1` Table 1, `VFlag = 1`: `±0.44` pu on inverter base). Comparator inputs to the Q overload PI. Divided by `base_ratio` like `Pmax`/`Pmin`. Not a second box on `Q_g` |
 | `Kppmax`, `Kipmax` | yes | P-overload PI gains, shared by the upper and lower branch. Map a power error to per-unit `Δω`, so they are multiplied by `base_ratio` like `mp`. Table 1: `0.01` and `0.1` |
 | `Kpqmax`, `Kiqmax` | yes | Q-overload PI gains, shared by the upper and lower branch. `Kiqmax` is also accepted as `kiqmax`. Map a power error to a voltage command, so they are multiplied by `base_ratio` like `mq`. Table 1, `VFlag = 1`: `3` and `20` |
 | `InvBase` | optional | Converter MVA base (aliases `mach_base_MVA`, `inv_base`). Defaults to the system base; a `0` entry also falls back to it. `apply_gfm_base_conversion!` rescales `Xl`, `mq`, `mp`, `Kppmax`, `Kipmax`, `Kpqmax`, `Kiqmax`, `Pmax`, `Pmin`, `Qmax`, `Qmin`, `Imax` to system base at read time |
@@ -453,30 +463,32 @@ Nested in `RunConfig.transient.dyn_model`. Defined in `_transient_stability/DynM
 
 | Field | Options | Default | Description |
 |---|---|---|---|
-| `gen_order` | `CLASSICAL_2ND`, `DQ_4TH` | `CLASSICAL_2ND` | `DQ_4TH` = 4th-order dq machine (FULL_BUS only; see preset below) |
+| `gen_order` | `CLASSICAL_2ND`, `DQ_4TH` | `CLASSICAL_2ND` | `DQ_4TH` = 4th-order dq machine (`FULL_BUS` only; see preset below) |
 | `network_form` | `KRON_REDUCED`, `FULL_BUS` | `KRON_REDUCED` | Kron vs full-network nodal |
 | `mech_power_mode` | `USE_PG`, `USE_PM` | `USE_PG` | Swing uses `P_g` or explicit `P_m` |
-| `include_governor` | `Bool` | `false` | TGOV1 turbine governor → time-varying `P_mech(t)`; **FULL_BUS + USE_PM only** |
-| `include_avr` | `Bool` | `false` | SEXS AVR → time-varying `E_fd(t)`; **DQ_4TH + FULL_BUS + USE_PM only** |
+| `include_governor` | `Bool` | `false` | TGOV1 turbine governor → time-varying `P_mech(t)`; **`FULL_BUS` + `USE_PM` only** |
+| `include_avr` | `Bool` | `false` | SEXS AVR → time-varying `E_fd(t)`; **`DQ_4TH` + `FULL_BUS` + `USE_PM` only** |
 | `governor_limiter` | `GOV_NO_LIMIT`, `GOV_SMOOTH`, `GOV_HARD_BOUND` | `GOV_NO_LIMIT` | Valve saturation treatment (only read when `include_governor`) |
-| `allow_gfm` | `Bool` | `false` | Mixed fleet with separate `gfm_dynamic_data.csv`; **requires `DQ_4TH` + `FULL_BUS`** (Phase G2: init + ACOPF limits + transient filters/droop/PI/limiter) |
+| `allow_gfm` | `Bool` | `false` | Mixed fleet with separate `gfm_dynamic_data.csv`; **requires `DQ_4TH` + `FULL_BUS`** |
 | `gfm_in_coi` | `Bool` | `false` | Converters take part in the Centre of Inertia, weighted by `H_eff = TPf/(2·mp)`, and gain `:coi_box` corridor rows under the same tolerances as the machines. Governs `bound_style_δ = :coi_box` and `bound_style_Δω = :coi_box` together; warns when inert. **Required** on a converter-only fleet whenever either corridor references the COI |
-| `gfm_pq_overload` | `Bool` | `false` | REGFM_A1 Fig. 3 P and Q overload PIs. Off, the droop row and the Q–V voltage error are unchanged. On, eight states per converter-step. The integrators follow `gfm_integrator`. Warns when `allow_gfm` is false |
-| `allow_all_gfm` | `Bool` | `false` | Permit a **converter-only** fleet (every active generator in `gfm_dynamic_data.csv`). Default `false` throws, so an all-converter run can never happen by accident. When true, `validate_all_gfm_fleet!` still rejects `bound_style_δ ∈ (:swing_propagated, :highest_H)` (both need machine inertia), a COI-referenced corridor without `gfm_in_coi`, and `include_avr`/`include_governor` (SG-only families, so they would be silent no-ops). See `INPUT_FILES/9bus_gfm_all/` |
-| `dq_speed_dev_in_algebra` | `Bool` | `true` | **DQ_4TH only:** include `(1+Δω)` in `Pe` and stator `Vd`/`Vq` algebra (RMS-style); `false` neglects speed in those equations |
+| `gfm_pq_overload` | `Bool` | `false` | `REGFM_A1` Fig. 3 P and Q overload PIs. Off, the droop row and the Q–V voltage error are unchanged. On, eight states per converter-step. The integrators follow `gfm_integrator`. Warns when `allow_gfm` is false |
+| `allow_all_gfm` | `Bool` | `false` | Permit a **converter-only** fleet (every active generator in `gfm_dynamic_data.csv`). Default `false` throws, so an all-converter run can never happen by accident. When true, `validate_all_gfm_fleet!` still rejects `bound_style_δ ∈ (:swing_propagated, :highest_H)` (both need machine inertia), a COI-referenced corridor without `gfm_in_coi`, and `include_avr`/`include_governor` (SG-only families, so they would be silent no-ops) |
+| `dq_speed_dev_in_algebra` | `Bool` | `true` | **`DQ_4TH` only:** include `(1+Δω)` in `Pe` and stator `Vd`/`Vq` algebra (RMS-style); `false` neglects speed in those equations |
+| `ode_first_step` | `:trapezoidal`, `:backward_euler` | `:trapezoidal` | Integration rule of the first row of each window (swing, EMF, AVR, governor, GFM angle); every later row is trapezoidal. `:backward_euler` requires `FULL_BUS` |
+| `gfm_integrator` | `:backward_euler`, `:follow_ode_first_step`, `:trapezoidal` | `:backward_euler` | Integration rule of the GFM measurement filters, Q–V PI and overload PIs only — see [Part I §9](model/09_grid_forming.md) |
 
 **Common presets:**
 
 | Scenario | Suggested settings |
 |---|---|
 | Classic TSC-ACOPF (Kron) | defaults: `KRON_REDUCED`, `USE_PG`, `:swing_propagated` |
-| FULL_BUS TSC-ACOPF | `network_form=FULL_BUS`, `mech_power_mode=USE_PM`, `bound_style_δ=:coi_box` |
-| FULL_BUS + turbine governor | above **plus** `include_governor=true`, `gen_dynamic_filename="gen_dynamic_data_full.csv"` (needs `R,T1,T2,T3`) |
-| DQ_4TH FULL_BUS TSC-ACOPF | `gen_order=DQ_4TH`, `FULL_BUS`, `USE_PM`, `bound_style_δ=:coi_box`, `gen_dynamic_filename="gen_dynamic_data_full.csv"` (needs `Xq_tr,Xd,Xq,Td,Tq,Ra`); optional `dq_speed_dev_in_algebra=false` |
-| DQ_4TH + AVR | DQ preset **plus** `include_avr=true` (needs `T_exc,K_exc,Ta_exc,Tb_exc` in full CSV; `Ta_exc=Tb_exc=0` bypasses the lead-lag) |
-| DQ_4TH + governor | DQ preset **plus** `include_governor=true` (needs `R,T1,T2,T3` in full CSV) |
-| DQ_4TH + AVR + governor | Both flags true (reference-style full control stack) |
-| Mixed SG + GFM (Phase G2) | DQ preset **plus** `allow_gfm=true`, case `9bus_gfm`, split dyn CSVs (see §3.3) |
+| `FULL_BUS` TSC-ACOPF | `network_form=FULL_BUS`, `mech_power_mode=USE_PM`, `bound_style_δ=:coi_box` |
+| `FULL_BUS` + turbine governor | above **plus** `include_governor=true`, `transient.gen_dynamic_filename="gen_dynamic_data_full.csv"` (needs `R,T1,T2,T3`) |
+| `DQ_4TH` `FULL_BUS` TSC-ACOPF | `gen_order=DQ_4TH`, `FULL_BUS`, `USE_PM`, `bound_style_δ=:coi_box`, `transient.gen_dynamic_filename="gen_dynamic_data_full.csv"` (needs `Xq_tr,Xd,Xq,Td,Tq,Ra`); optional `dq_speed_dev_in_algebra=false` |
+| `DQ_4TH` + AVR | DQ preset **plus** `include_avr=true` (needs `T_exc,K_exc,Ta_exc,Tb_exc` in full CSV; `Ta_exc=Tb_exc=0` bypasses the lead-lag) |
+| `DQ_4TH` + governor | DQ preset **plus** `include_governor=true` (needs `R,T1,T2,T3` in full CSV) |
+| `DQ_4TH` + AVR + governor | Both flags true (reference-style full control stack) |
+| Mixed SG + GFM | DQ preset **plus** `allow_gfm=true`, case `39bus_gfm`, split dyn CSVs (see §3.3) |
 | TSC-DCOPF (linearised Pe) | `dispatch.type_model="DCOPF"`, Kron defaults |
 
 #### Turbine governor (TGOV1)
@@ -515,7 +527,7 @@ same column names as the `CONSTRAINT` ≤-rows.
 
 Block diagram and equations: [`docs/dynamic_controls_avr_governor.md`](dynamic_controls_avr_governor.md) (governor section).
 
-#### AVR (SEXS exciter) — DQ_4TH only
+#### AVR (SEXS exciter) — `DQ_4TH` only
 
 When `include_avr=true`, field voltage `E_fd` becomes a time-varying state driven by
 terminal-voltage feedback through the SEXS chain:
@@ -531,12 +543,11 @@ Requires `T_exc, K_exc, Ta_exc, Tb_exc` in `gen_dynamic_data_full.csv`. Saturati
 limits come from `TsBoundLimitsConfig` (default `[0, 2]` pu). The saturated `E_fd(t)`
 couples into the Eq EMF ODE. Pre-fault: `E_fd = K_exc·(V_ref − V_bus)` (unity DC gain
 through the lead-lag, so the steady-state link is unchanged). Can be combined with
-`include_governor=true` on DQ_4TH.
+`include_governor=true` on `DQ_4TH`.
 
 **Lead-lag bypass.** `Ta_exc = Tb_exc = 0` skips the lead-lag stage entirely for that
 generator — no `E_LL` variables, no rows — matching ANDES `zero_out=True`. Every
-shipped fixture uses this, so default AVR runs are identical to the old
-first-order-only model. `Tb_exc = 0` with `Ta_exc > 0` is rejected
+shipped case uses this. `Tb_exc = 0` with `Ta_exc > 0` is rejected
 (`validate_dyn_data!`): that is a bare differentiator with no state-space realization.
 Both time constants must be ≥ 0. When `Tb_exc > 0` and `t_step > 2·Tb_exc`, the
 builder warns that the trapezoidal update will alternate in sign (stable ringing).
@@ -556,14 +567,14 @@ Duals: `dual_Vref_init`, `dual_avr_leadlag` (when present), `dual_avr_E_fd` (ODE
 
 See [`docs/dynamic_controls_avr_governor.md`](dynamic_controls_avr_governor.md) for the AVR block diagram.
 
-#### DQ_4TH machine (machine core + optional AVR / governor)
+#### `DQ_4TH` machine (machine core + optional AVR / governor)
 
 `gen_order=DQ_4TH` adds subtransient emfs `Ed`/`Eq`, dq currents `Id`/`Iq`, and field voltage
 `E_fd` (constant by default; dynamic when `include_avr=true`). Mechanical power is constant
 `P_m` by default; time-varying `P_mech(t)` when `include_governor=true`. Requires
 `gen_dynamic_data_full.csv` with columns `Xq_tr, Xd, Xq, Td, Tq, Ra` in addition to the usual
 `Xd_tr, H, D` (plus `T_exc,K_exc,Ta_exc,Tb_exc` for AVR and `R,T1,T2,T3` for governor). SC and GL faults are
-supported on the FULL_BUS network path.
+supported on the `FULL_BUS` network path.
 `TSC-DCOPF` + `DQ_4TH` is not implemented.
 
 ### 4.2 Loads and stability corridors
@@ -609,15 +620,15 @@ On a mixed SG + GFM fleet the two machine-referenced styles **also bound the con
 against the same reference and the same `δ_tol`: `δ_g − δ_ref` needs no inertia from `g`,
 only an angle in the same frame. `:swing_propagated` never does, because it propagates a
 per-machine `H` *and* `D`. `:coi_box` does so when `gfm_in_coi = true`, which also weights
-the converters into the COI mean itself with `H_eff = Tf/(2·mp)`, the equivalent inertia of
+the converters into the COI mean itself with `H_eff = TPf/(2·mp)`, the equivalent inertia of
 the LPF-droop frequency loop; left `false` (the default) it stays SG-only. The same
 split applies on the speed side — `bound_style_Δω = :abs` always spans the converters,
 `:coi_box` only under `gfm_in_coi`. A converter can be the reference under `:ref_gen`, but never under `:highest_H`,
 which ranks by `H`. Converter duals arrive as extra `Gen_*` columns in the existing
 `dual_delta_ref_*.csv` / `dual_Delta_Omega_abs_*.csv`; `swing_debug.csv` remains SG-only.
 
-Every style is honoured on **every** network form (Kron, Kron-linear, FULL_BUS), and they
-price differently — a Kron-vs-FULL_BUS dual comparison must fix the same style on both
+Every style is honoured on **every** network form (Kron, Kron-linear, `FULL_BUS`), and they
+price differently — a Kron-vs-`FULL_BUS` dual comparison must fix the same style on both
 sides. Note that `USE_PM` rejects `:swing_propagated`, and `FULL_BUS` requires `USE_PM`, so
 in practice the propagated form is a Kron + `USE_PG` option.
 
@@ -701,8 +712,8 @@ DynModelConfig(
 ```
 
 !!! note "Order is (Z, I, P) in both vectors"
-    Index 1 is **impedance**, index 2 is **current**, index 3 is **power**. The reference
-    implementation stores the vector as `(P, I, Z)`, so its `[0,0,1]` (constant-Z) is our `(1,0,0)`.
+    Index 1 is **impedance**, index 2 is **current**, index 3 is **power**. A code that
+    stores the vector as `(P, I, Z)` writes constant impedance as `[0,0,1]`, which is our `(1,0,0)`.
 
 Both splits apply only on `network_form = FULL_BUS` (classical and `DQ_4TH`, SG-only or mixed
 SG+GFM). On `KRON_REDUCED` loads are folded into `Y_red` as constant admittance, so the two
@@ -726,7 +737,7 @@ constant-power ACOPF warm start at `t = 0`; the two channels only diverge off eq
     guidance — a run that violates one fails fast rather than building a model
     that silently means something different than you intended.
 
-- `USE_PM` **rejects** `bound_style_δ = :swing_propagated` (that row substitutes the dispatch power into the angle band, which is inconsistent with an explicit `P_m`); the three box styles are all valid
+- `USE_PM` **rejects** `bound_style_δ = :swing_propagated` (that row substitutes the dispatch power into the angle band, which is inconsistent with an explicit `P_m`); the four box styles (`:coi_box`, `:highest_H`, `:ref_gen`, `:pairwise`) are all valid
 - a transient run **requires at least one corridor**: `constrain_δ = true` or `constrain_Δω = true`
 - `bound_style_δ = :ref_gen` **requires** `δ_ref_gen_id`; the id is checked against the system data by `validate_δ_reference!` (in service, not tripped, at least two surviving units) before the warm-start solve. A GFM id is accepted; the `H > 0` and id-range checks then do not apply, since `gen_dynamic_data` holds machine rows only. `:highest_H` additionally requires one surviving machine with `H > 0` — it ranks by inertia, so its reference is never a converter
 - `bound_style_δ = :pairwise` requires `δ_pair_tol_deg > 0` and, like the machine-referenced styles, **at least two surviving units** after the disturbance (`validate_δ_reference!`); it resolves no reference machine, so `δ_ref_gen_id` is inert on such a run
@@ -737,9 +748,8 @@ constant-power ACOPF warm start at `t = 0`; the two channels only diverge off eq
 - `zip_load_p` and `zip_load_q` coefficients must each sum to 1 (checked per vector)
 - `DQ_4TH` **requires** `FULL_BUS`, `mech_power_mode=USE_PM`, a box-form `bound_style_δ`, and full machine columns in `gen_dynamic_data` (use `gen_dynamic_data_full.csv`)
 - `include_avr=true` **requires** `gen_order=DQ_4TH` (and `T_exc,K_exc,Ta_exc,Tb_exc` in the dynamic CSV; `Ta_exc=Tb_exc=0` is the lead-lag bypass)
-- `include_governor=true` on DQ_4TH uses the same TGOV1 layer as classical FULL_BUS (`R,T1,T2,T3` in CSV)
+- `include_governor=true` on `DQ_4TH` uses the same TGOV1 layer as classical `FULL_BUS` (`R,T1,T2,T3` in CSV)
 - `TSC-DCOPF` + `DQ_4TH` → **not implemented**
-- `include_avr` **requires** `gen_order = DQ_4TH` when enabled (reserved)
 - `include_governor` **requires** `mech_power_mode = USE_PM` **and** `network_form = FULL_BUS` (not supported on the Kron path)
 
 ---
@@ -845,7 +855,7 @@ fault = FaultConfig(fault_type = OB, ob_branch_ids = [6])       # one circuit (9
 Validation requires every listed branch to be in service, rejects mixing with `gl_*`
 fields, and **hard-fails** if the open set islands the network or isolates the slack.
 
-FULL_BUS classical, Kron, and DQ FULL_BUS builders implement OB (same single
+`FULL_BUS` classical, Kron, and DQ `FULL_BUS` builders implement OB (same single
 dynamic window as GL).
 
 ---
@@ -924,7 +934,7 @@ CSVs. `gen_dynamic_data.csv` and `contingencies.csv` are always archived for TSC
 To start from a MATPOWER case and generate the in-house CSV files explicitly:
 
 ```julia
-imp = Import_Matpower_Case("INPUT_FILES/PowerModels/case39.m")
+imp = Import_Matpower_Case("path/to/case39.m")
 imp.DBUS, imp.DGEN, imp.DCIR     # in-house DataFrames (1..nBUS remapped)
 imp.path_names[:pf_inputs]       # RESULTS/Results - <ts>/Inputs/ with the 3 CSVs
 ```
@@ -971,7 +981,7 @@ Rules enforced at `load_system` (all throw, none silently correct the data):
 
 `load_factor` scales the table and the bus demand together, so the two stay consistent.
 
-**What honours it.** The FULL_BUS nodal balances, classical and DQ_4TH. Each bus enters its
+**What honours it.** The `FULL_BUS` nodal balances, classical and `DQ_4TH`. Each bus enters its
 balance with the demand-weighted mean of the shares of the loads sitting on it, which is exact
 rather than an approximation: every load at a bus sees the same trajectory voltage and the same
 nominal voltage, so the sum of their ZIP polynomials is the mean polynomial times the bus total.

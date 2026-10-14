@@ -2,7 +2,7 @@
 
 The examples in [Running a case](running_a_case.md) are deliberately partial: each sets the handful of fields that matter for one scenario and leaves everything else at its default. This page is the opposite. It writes out **one run with every user-facing field of every configuration struct set explicitly**, so you can copy it, delete what you do not need, and know that nothing is hiding behind a default you never saw.
 
-The scenario is the most demanding path the package supports today: IEEE 9-bus with a mixed synchronous / grid-forming fleet, 4th-order machines on the full nodal network, AVR and TGOV1 governor active, smooth valve saturation, and an ACOPF warm start.
+The scenario is the most demanding path the package supports today: the 39-bus case of the paper (`39bus_gfm`) with a mixed synchronous / grid-forming fleet, 4th-order machines on the full nodal network, AVR and TGOV1 governor active, smooth valve saturation, and an ACOPF warm start.
 
 !!! warning "Struct-verified, not run-verified"
     Every field name, type, and default on this page was checked against the struct definitions in `src/`. The configuration below was **not executed**, so no objective value, solve time, or dual is quoted. Treat it as a syntactically and semantically valid configuration, not as a benchmark result. If you run it, expect a large NLP: 500 time steps × two windows × (4 machine states + 2 control states + GFM states) per unit.
@@ -52,6 +52,7 @@ const dispatch_cfg = DispatchConfig(
     ineq_sg_upper        = false,             # generator capability circle
     ineq_sbranch_upper   = true,              # branch thermal limits (DCIR.l_cap_1)
     ineq_ang_diff_branch = true,              # per-branch angle-difference limits
+    pd_as_variable       = false,             # ACOPF only: demand as a pinned variable (dual = ∂L/∂P_d)
     solve_explicit_dual  = false,             # ED/DCOPF + linear cost only
     limits               = dispatch_limits,
     bound_encoding       = TSCOPF.CONSTRAINT, # CONSTRAINT (dual-friendly) | VARIABLE
@@ -62,11 +63,12 @@ const ts_simulation = TsSimulationConfig(
     δ_tol_deg       = 100.0,   # symmetric |δ − δ_COI| corridor [deg]
     δ_tol_deg_lower = nothing, # positive magnitude below COI; nothing → δ_tol_deg
     δ_tol_deg_upper = nothing, # positive magnitude above COI; nothing → δ_tol_deg
+    δ_pair_tol_deg  = 180.0,   # |δᵢ − δⱼ| limit, read only by bound_style_δ = :pairwise
     t_start_sim     = 0.0,
     t_end_sim       = 5.0,     # end of the post-fault window [s]
     t_step          = 0.01,    # trapezoidal Δt [s]
     t_start_fault   = 0.01,    # disturbance instant [s]
-    clearing_time   = 0.15,    # SC only: fault-on duration [s]
+    clearing_time   = 0.15,    # SC only: fault-on duration [s]; the fault lasts clearing_time + t_step
     f_syn           = 50.0,    # synchronous frequency [Hz] → ω_s = 2π f
     Δω_0            = 0.0,     # initial speed deviation [p.u.]
 )
@@ -102,6 +104,14 @@ const ts_limits = TsBoundLimitsConfig(
     E_fd_unlim_tf = OPEN, E_fd_unlim_tpf = OPEN,
     Pv_tf = OPEN, Pv_tpf = OPEN,
     Pm_tf = OPEN, Pm_tpf = OPEN,
+    # GFM guard-rail margins and floors (read only when allow_gfm)
+    gfm_δ_min_rad = -π, gfm_δ_max_rad = π,
+    gfm_V_meas_min_pu = 0.0, gfm_V_meas_max_pu = 2.5,
+    gfm_E_raw_extra_pu = 0.25, gfm_E_raw_slack_pu = 0.5, gfm_E_clip_slack_pu = 0.05,
+    gfm_PQ_bound_scale = 1.5, gfm_PQ_bound_offset_pu = 0.05,
+    gfm_P_meas_floor_pu = 3.0, gfm_Q_meas_floor_pu = 3.0,
+    gfm_I_floor_pu = 5.0, gfm_I_ceiling_pu = 20.0,
+    gfm_pq_raw_span_pu = 20.0, gfm_pq_clip_slack_pu = 0.05,
 )
 
 # ── 5. Which transient constraints and boxes get built ───────────────────────
@@ -132,6 +142,18 @@ const ts_builder = TsBuilderConfig(
     bound_E_fd_unlim_tf = false, bound_E_fd_unlim_tpf = false,
     bound_Pv_tf = false, bound_Pv_tpf = false,
     bound_Pm_tf = false, bound_Pm_tpf = false,
+    # GFM guard-rail boxes (default true; read only when allow_gfm)
+    bound_gfm_δ = true,
+    bound_gfm_P_meas_tf = true, bound_gfm_Q_meas_tf = true, bound_gfm_V_meas_tf = true,
+    bound_gfm_E_int_raw_tf = true, bound_gfm_E_int_tf = true,
+    bound_gfm_E_droop_raw_tf = true, bound_gfm_E_droop_tf = true,
+    bound_gfm_Id_tf = true, bound_gfm_Iq_tf = true,
+    bound_gfm_P_meas_tpf = true, bound_gfm_Q_meas_tpf = true, bound_gfm_V_meas_tpf = true,
+    bound_gfm_E_int_raw_tpf = true, bound_gfm_E_int_tpf = true,
+    bound_gfm_E_droop_raw_tpf = true, bound_gfm_E_droop_tpf = true,
+    bound_gfm_Id_tpf = true, bound_gfm_Iq_tpf = true,
+    bound_gfm_pq_raw_tf = true, bound_gfm_pq_raw_tpf = true,
+    bound_gfm_pq_clip_tf = true, bound_gfm_pq_clip_tpf = true,
     # The δ–COI stability corridor itself (this is the TSC in TSC-OPF)
     ineq_δ_COI_tf_lower  = true,
     ineq_δ_COI_tf_upper  = true,
@@ -142,10 +164,12 @@ const ts_builder = TsBuilderConfig(
 )
 
 # ── 6. The disturbance ───────────────────────────────────────────────────────
-# contingencies.csv row 2 on the 9-bus: three-phase fault at bus 7, trip circuit 6.
+# contingencies.csv row 57 of 39bus_gfm: three-phase fault at bus 23, trip circuit 29 (23–24).
 const fault_cfg = FaultConfig(
     fault_type       = SC,          # SC | GL | OB
-    contingency_id   = 2,           # SC only: row of contingencies.csv
+    contingency_id   = 57,          # SC only: row of contingencies.csv
+    sc_fault_admittance_pu = -im * TSCOPF.FAULT_BUS_SHUNT,  # SC only: inductive solid short
+    sc_fault_stamp   = :add,        # SC only: :add to Y_kk, or :overwrite
     gl_gen_ids       = Int[],       # GL only: DGEN row indices to trip
     gl_load_bus_ids  = Int[],       # GL only: buses whose demand is scaled
     gl_percent_power = Float64[],   # GL only: α per bus, p_d ← p_d(1+α)
@@ -163,12 +187,17 @@ const dyn_model_cfg = DynModelConfig(
     governor_limiter        = GOV_SMOOTH,      # GOV_NO_LIMIT | GOV_SMOOTH | GOV_HARD_BOUND
     allow_gfm               = true,            # DQ_4TH + FULL_BUS only
     gfm_in_coi              = false,           # converters in the COI + :coi_box corridors
+    gfm_pq_overload         = false,           # REGFM_A1 P/Q overload PIs
+    allow_all_gfm           = false,           # opt-in for a converter-only fleet
     ode_first_step          = :trapezoidal,    # :trapezoidal | :backward_euler
     gfm_integrator          = :backward_euler, # GFM filters + Q–V PI only
     zip_load_p              = (1.0, 0.0, 0.0), # ACTIVE demand (Z, I, P), sums to 1
     zip_load_q              = (1.0, 0.0, 0.0), # REACTIVE demand (Z, I, P), sums to 1
-    bound_style_δ             = :coi_box,        # :coi_box | :swing_propagated | :highest_H | :ref_gen | :pairwise
-    constrain_Δω              = false,           # optional speed corridor (bound_style_Δω)
+    constrain_δ             = true,            # build the rotor-angle corridor
+    bound_style_δ           = :coi_box,        # :coi_box | :swing_propagated | :highest_H | :ref_gen | :pairwise
+    δ_ref_gen_id            = nothing,         # required by :ref_gen only
+    constrain_Δω            = false,           # optional speed corridor
+    bound_style_Δω          = :coi_box,        # :coi_box | :abs
     Δω_tol_pu               = 0.5,             # symmetric half-width [p.u.]
     Δω_tol_pu_lower         = nothing,         # positive magnitude below COI
     Δω_tol_pu_upper         = nothing,         # positive magnitude above COI
@@ -182,6 +211,7 @@ const transient_cfg = TransientConfig(
     dyn_model            = dyn_model_cfg,
     gen_dynamic_filename = "gen_dynamic_data_full.csv",  # DQ needs the extended file
     gfm_dynamic_filename = "gfm_dynamic_data.csv",       # read only when allow_gfm
+    extra_contingency_ids = Int[],                       # further SC contingencies in the same solve
 )
 
 # ── 9. Solver option blocks (all four; only the selected one is applied) ─────
@@ -197,6 +227,8 @@ const ipopt_cfg = IpoptSolverConfig(
     acceptable_tol             = nothing, # nothing ⇒ leave the Ipopt default
     obj_scaling_factor         = nothing,
     nlp_scaling_method         = nothing, # e.g. "gradient-based"
+    mu_strategy                = nothing, # "monotone" | "adaptive"
+    mu_init                    = nothing, # nothing ⇒ Ipopt's 0.1 (1e-3 with gfm_in_coi + constrain_Δω)
     pardiso_lib_path           = nothing, # required for solver_name "Ipopt-pardiso"
     pardiso_license_message    = true,
 )
@@ -241,9 +273,9 @@ const cfg = RunConfig(
     trans_stab = true,
 
     # Orchestration
-    case           = "9bus_gfm",
+    case           = "39bus_gfm",
     base_MVA       = 100.0,
-    load_factor    = 1.5,
+    load_factor    = 1.0,
     solver_name    = "Ipopt",
     silent_solver  = false,
     time_limit_sec = 3600.0,
@@ -260,7 +292,10 @@ const cfg = RunConfig(
     save_optim_matrices     = false,  # forced false on TSC paths regardless
     save_matrices           = true,
     save_ts_plots           = false,  # true also needs Plots + load_plots_extension!
+    save_ts_debug_csv       = false,  # per-step diagnostics under CSV/Debug/
     save_warmstart_dispatch = true,
+    run_script              = nothing,  # @__FILE__ archives this script in the run folder
+    post_solve_hook         = nothing,  # f(; kwargs...) called before the model is released
 
     # Nested avenues
     dispatch  = dispatch_cfg,
@@ -312,7 +347,10 @@ Every table below lists **all** fields of the struct. "Default" is the value in 
 | `save_optim_matrices` | `Bool` | `false` | Steady-state only; `resolve_save_optim_matrices` forces `false` on TSC paths |
 | `save_matrices` | `Bool` | `true` | Ybus / Bbus / Kron matrices to `Bus_Matrices/` |
 | `save_ts_plots` | `Bool` | `false` | SVG trajectories. `true` without Plots loaded raises at validation |
-| `save_warmstart_dispatch` | `Bool` | `false` | Archives the steady-state pre-solve. Requires TSC + (ACOPF + FULL_BUS) or (DCOPF + Kron) |
+| `save_ts_debug_csv` | `Bool` | `false` | Per-(window, generator, step) diagnostics under `Transient_Stability/CSV/Debug/` |
+| `save_warmstart_dispatch` | `Bool` | `false` | Archives the steady-state pre-solve. Requires TSC + (ACOPF + `FULL_BUS`) or (DCOPF + Kron) |
+| `run_script` | `String` or `nothing` | `nothing` | Path of a file to copy into the run folder; usually `@__FILE__` |
+| `post_solve_hook` | `Function` or `nothing` | `nothing` | Called once with the model still assembled; keyword arguments only |
 | `dispatch` | `DispatchConfig` | `DispatchConfig()` | Avenue 1 |
 | `transient` | `TransientConfig` or `nothing` | `nothing` | Avenue 2 |
 | `matpower_file` | `String` or `nothing` | `nothing` | Filename relative to the case folder, or an absolute path. Dynamic and contingency CSVs are still read from the case folder |
@@ -330,6 +368,7 @@ Every table below lists **all** fields of the struct. "Default" is the value in 
 | `ineq_sg_upper` | `Bool` | `false` | Generator apparent-power capability |
 | `ineq_sbranch_upper` | `Bool` | `true` | Branch thermal limits from `DCIR.l_cap_1`; unrated branches (`0`) are skipped |
 | `ineq_ang_diff_branch` | `Bool` | `true` | Angle-difference rows, clamped by `DispatchLimitsConfig` |
+| `pd_as_variable` | `Bool` | `false` | ACOPF only: demand as a variable pinned to the data; its dual is `∂L/∂P_d` |
 | `solve_explicit_dual` | `Bool` | `false` | Solves the hand-written dual LP. ED or DCOPF, linear cost, and DCOPF also needs `use_matrix = true` |
 | `limits` | `DispatchLimitsConfig` | `DispatchLimitsConfig()` | Non-case-data limits |
 | `bound_encoding` | `BoundEncoding` | `CONSTRAINT` | `TSCOPF.CONSTRAINT` or `TSCOPF.VARIABLE`. UC ignores it |
@@ -352,6 +391,7 @@ Voltage, generator, thermal, and per-branch angle limits are **case data** and c
 | `δ_tol_deg` | `Float64` | `90.0` | Symmetric corridor half-width, degrees. Must be positive. **The knob to sweep** |
 | `δ_tol_deg_lower` | `Float64` or `nothing` | `nothing` | Positive magnitude below COI; `nothing` falls back to `δ_tol_deg` |
 | `δ_tol_deg_upper` | `Float64` or `nothing` | `nothing` | Positive magnitude above COI |
+| `δ_pair_tol_deg` | `Float64` | `180.0` | Symmetric \|δᵢ − δⱼ\| limit, degrees; read only by `:pairwise` |
 | `t_start_sim` | `Float64` | `0.0` | Recorded for output; the grids start at `t_start_fault` |
 | `t_end_sim` | `Float64` | `5.0` | Must exceed the clearing instant (SC) or `t_start_fault` (GL/OB) |
 | `t_step` | `Float64` | `0.01` | Trapezoidal $\Delta t$. Halving it roughly doubles the NLP |
@@ -362,7 +402,7 @@ Voltage, generator, thermal, and per-branch angle limits are **case data** and c
 
 ### `TsBuilderConfig`
 
-Thirty-one `Bool` toggles plus `limits` and `bound_encoding`. They fall into four groups; all boxes default to `false`, all four corridor flags default to `true`.
+Sixty-two `Bool` toggles plus `limits` and `bound_encoding`. The synchronous-machine boxes default to `false`; the four corridor flags and the GFM guard-rail boxes default to `true`.
 
 | Group | Fields | Default | Effect |
 |---|---|---|---|
@@ -373,10 +413,11 @@ Thirty-one `Bool` toggles plus `limits` and `bound_encoding`. They fall into fou
 | Control set-points | `bound_V_ref`, `bound_P_ref` | `false` | Boxes on the AVR and governor set-points |
 | Control research boxes | `bound_E_fd_unlim_tf/_tpf`, `bound_Pv_tf/_tpf`, `bound_Pm_tf/_tpf` | `false` | Boxes on the pre-saturation exciter state and the governor trajectories. Saturation physics is unchanged either way |
 | δ–COI corridor | `ineq_δ_COI_tf_lower`, `ineq_δ_COI_tf_upper`, `ineq_δ_COI_tpf_lower`, `ineq_δ_COI_tpf_upper` | `true` | The transient-stability constraint itself. Turning all four off gives a plain OPF with dynamics attached but nothing binding |
+| GFM guard-rails | `bound_gfm_δ`, `bound_gfm_{P_meas,Q_meas,V_meas,E_int_raw,E_int,E_droop_raw,E_droop,Id,Iq}_{tf,tpf}`, `bound_gfm_pq_{raw,clip}_{tf,tpf}` | `true` | Boxes on the converter states; read only when `allow_gfm` |
 | Values | `limits::TsBoundLimitsConfig` | `TsBoundLimitsConfig()` | The numbers behind every box above |
 | Encoding | `bound_encoding::BoundEncoding` | `CONSTRAINT` | δ–COI rows and expression targets always use `CONSTRAINT` regardless |
 
-The pre-fault init equalities that link the OPF point to the initial dynamic state (`eq_const_P_init`, `eq_const_Q_init`, `eq_const_Pm_init`) are **not** toggles — they are always built by whichever path applies. The `eq_P_init` / `eq_Q_init` / `eq_Pm_init` flags that once existed were removed.
+The pre-fault init equalities that link the OPF point to the initial dynamic state (`eq_const_P_init`, `eq_const_Q_init`, `eq_const_Pm_init`) are **not** toggles — they are always built by whichever path applies.
 
 ### `TsBoundLimitsConfig`
 
@@ -387,7 +428,7 @@ The pre-fault init equalities that link the OPF point to the initial dynamic sta
 | `E_min_pu`, `E_max_pu` | `Float64` | `0.0`, `2.0` | Classical internal emf box **and** the AVR field-voltage clamp. See the warning below |
 | `δ_min_rad`, `δ_max_rad` | `Float64` | `-π`, `π` | Pre-fault rotor-angle box |
 | `P_m_source` | `Symbol` | `:dgen_pg_limits` | Only accepted value; takes `DGEN.pg_min/pg_max ÷ base_MVA` |
-| `V_bus_min_pu` | `Float64` | `0.0` | Forced lower bound on `V_tf` / `V_tpf` on FULL_BUS |
+| `V_bus_min_pu` | `Float64` | `0.0` | Forced lower bound on `V_tf` / `V_tpf` on `FULL_BUS` |
 | `gov_valve_min_pu` | `Float64` | `0.0` | Valve floor when a limiter is active |
 | `gov_valve_max_source` | `Symbol` | `:dgen_pg_limits` | Only accepted value; valve ceiling per generator |
 | `δ_tf`, `Δω_tf`, `Pe_tf`, `Qe_tf`, `δCOI_tf` | `TsBoundLimitPair` | `(-Inf, Inf)` | Classical fault-window boxes |
@@ -399,6 +440,7 @@ The pre-fault init equalities that link the OPF point to the initial dynamic sta
 | `Ed_tf … Te_tf`, `Ed_tpf … Te_tpf` | `TsBoundLimitPair` | `(-Inf, Inf)` | DQ machine states per window (5 + 5) |
 | `E_fd_unlim_tf`, `E_fd_unlim_tpf` | `TsBoundLimitPair` | `(-Inf, Inf)` | Pre-saturation exciter state |
 | `Pv_tf`, `Pv_tpf`, `Pm_tf`, `Pm_tpf` | `TsBoundLimitPair` | `(-Inf, Inf)` | Governor valve and mechanical trajectories |
+| `gfm_*` (14 fields) | `Float64` | see the example | GFM guard-rail margins and floors; [Parameter reference §3.2](parameter_reference.md) lists each default |
 
 !!! warning "`E_min_pu` / `E_max_pu` do double duty"
     On the classical path they bound the internal emf $E'$. On the DQ path with `include_avr = true` the **same pair** supplies the field-voltage clamp $[E^{\min}, E^{\max}]$ of Model 8.4. The default `[0, 2]` is tight for a field voltage, which is why the example uses `4.0`. There is no separate knob today; see [chapter 8](model/08_controls_avr_governor.md).
@@ -414,15 +456,19 @@ The pre-fault init equalities that link the OPF point to the initial dynamic sta
 | `include_avr` | `Bool` | `false` | Chapter 8. Requires `DQ_4TH` and `T_exc`, `K_exc`, `Ta_exc`, `Tb_exc` columns |
 | `include_governor` | `Bool` | `false` | Chapter 8. Requires `USE_PM`, `FULL_BUS`, and `R`, `T1`, `T2`, `T3` columns |
 | `governor_limiter` | `GovernorLimiter` | `GOV_NO_LIMIT` | `GOV_NO_LIMIT`, `GOV_SMOOTH`, `GOV_HARD_BOUND`. Only read when the governor is on |
-| `allow_gfm` | `Bool` | `false` | Chapter 9. Requires `DQ_4TH` + `FULL_BUS`, and at least one active SG must remain |
-| `gfm_in_coi` | `Bool` | `false` | Chapter 9. Weights converters into the COI with `H_eff = Tf/(2·mp)` and gives them `:coi_box` corridor rows. Governs `bound_style_δ`/`bound_style_Δω` `= :coi_box` only |
-| `gfm_pq_overload` | `Bool` | `false` | Chapter 9. REGFM_A1 Fig. 3 P and Q overload PIs. Off, the droop and the Q–V voltage error are unchanged |
+| `allow_gfm` | `Bool` | `false` | Chapter 9. Requires `DQ_4TH` + `FULL_BUS`. At least one active SG must remain unless `allow_all_gfm = true` |
+| `allow_all_gfm` | `Bool` | `false` | Chapter 9. Opt-in for a converter-only fleet |
+| `gfm_in_coi` | `Bool` | `false` | Chapter 9. Weights converters into the COI with `H_eff = TPf/(2·mp)` and gives them `:coi_box` corridor rows. Governs `bound_style_δ`/`bound_style_Δω` `= :coi_box` only |
+| `gfm_pq_overload` | `Bool` | `false` | Chapter 9. `REGFM_A1` Fig. 3 P and Q overload PIs. Off, the droop and the Q–V voltage error are unchanged |
 | `ode_first_step` | `Symbol` | `:trapezoidal` | `:trapezoidal` or `:backward_euler` for the first row of each window (swing, EMF, AVR, governor, and the GFM angle). Every later row stays trapezoidal |
 | `gfm_integrator` | `Symbol` | `:backward_euler` | GFM measurement filters and Q–V PI **only**. `:backward_euler` is BE at every step (the default — the trapezoidal variants cost ~70× solve time on a 3 s horizon); `:follow_ode_first_step` applies the `ode_first_step` rule above; `:trapezoidal` is trapezoidal at every step. Trapezoidal rings once `t_step > 2·Tf` |
 | `zip_load_p` | `NTuple{3,Float64}` | `(1.0, 0.0, 0.0)` | **Active** demand split `(Z, I, P)`; must sum to 1 |
 | `zip_load_q` | `NTuple{3,Float64}` | `(1.0, 0.0, 0.0)` | **Reactive** demand split `(Z, I, P)`; independent of `zip_load_p`; must sum to 1 |
+| `constrain_δ` | `Bool` | `true` | Build the rotor-angle corridor. At least one of `constrain_δ` / `constrain_Δω` must be on |
+| `δ_ref_gen_id` | `Int` or `nothing` | `nothing` | Reference machine; required by `:ref_gen` |
 | `bound_style_δ` | `Symbol` | `:swing_propagated` | `:coi_box` writes the corridor directly on $\delta - \delta^{\mathrm{COI}}$; `:swing_propagated` substitutes the trapezoidal update first; `:highest_H` / `:ref_gen` reference one live machine instead of the COI; `:pairwise` bounds every unordered pair of units against `δ_pair_tol_deg` and references nothing |
-| `constrain_Δω` | `Bool` | `false` | Adds the speed corridor; `bound_style_Δω` picks the COI or the raw Δω |
+| `constrain_Δω` | `Bool` | `false` | Adds the speed corridor |
+| `bound_style_Δω` | `Symbol` | `:coi_box` | `:coi_box` bounds Δω − Δω_COI; `:abs` bounds the raw Δω and forms no COI |
 | `Δω_tol_pu` | `Float64` | `0.5` | Symmetric half-width, p.u. Must be positive when the corridor is on |
 | `Δω_tol_pu_lower` | `Float64` or `nothing` | `nothing` | Positive magnitude below COI |
 | `Δω_tol_pu_upper` | `Float64` or `nothing` | `nothing` | Positive magnitude above COI |
@@ -441,6 +487,8 @@ The pre-fault init equalities that link the OPF point to the initial dynamic sta
 |---|---|---|---|
 | `fault_type` | `FaultType` | `SC` | `SC` bus short circuit, `GL` generator or load trip, `OB` open branch |
 | `contingency_id` | `Int` | `2` | SC only: row of `contingencies.csv`, giving faulted bus and branch to trip |
+| `sc_fault_admittance_pu` | `ComplexF64` | `-im * FAULT_BUS_SHUNT` | SC only: faulted-bus shunt (inductive solid short; `FAULT_BUS_SHUNT = 1e6`) |
+| `sc_fault_stamp` | `Symbol` | `:add` | SC only: `:add` adds the shunt to `Y_kk`; `:overwrite` replaces it |
 | `gl_gen_ids` | `Vector{Int}` | `Int[]` | GL only: `DGEN` row indices. Cannot trip the slack; at least one unit must survive |
 | `gl_load_bus_ids` | `Vector{Int}` | `Int[]` | GL only: buses whose demand is scaled. Mutually exclusive with `gl_gen_ids` in one run |
 | `gl_percent_power` | `Vector{Float64}` | `Float64[]` | GL only: $\alpha$ per bus, $p_d \leftarrow p_d(1+\alpha)$. $\alpha = -1$ is a full trip, $-0.5$ sheds half. Values below $-1$ are rejected |
@@ -470,19 +518,20 @@ FaultConfig(fault_type = OB, ob_branch_ids = [4, 5])
 | `dyn_model` | `DynModelConfig` | default | Physics, network form, disturbance |
 | `gen_dynamic_filename` | `String` | `"gen_dynamic_data.csv"` | SG machine data. `DQ_4TH` needs the `_full` variant |
 | `gfm_dynamic_filename` | `String` | `"gfm_dynamic_data.csv"` | Read only when `allow_gfm = true` |
+| `extra_contingency_ids` | `Vector{Int}` | `Int[]` | Further SC contingencies in the same solve; results in `Transient_Stability_c<id>/` |
 
 ### Solver configs
 
 | Struct | Fields | Notable defaults |
 |---|---|---|
-| `IpoptSolverConfig` | `tol`, `print_level`, `max_iter`, `constr_viol_tol`, `dual_inf_tol`, `compl_inf_tol`, `hessian_approximation`, `limited_memory_max_history`, `acceptable_tol`, `obj_scaling_factor`, `nlp_scaling_method`, `pardiso_lib_path`, `pardiso_license_message` | `tol = 1e-8`, `print_level = 5` (range 0–12), `max_iter = 5000`, `hessian_approximation = "exact"`. The four `nothing`-able fields leave Ipopt's own default in place when unset |
+| `IpoptSolverConfig` | `tol`, `print_level`, `max_iter`, `constr_viol_tol`, `dual_inf_tol`, `compl_inf_tol`, `hessian_approximation`, `limited_memory_max_history`, `acceptable_tol`, `obj_scaling_factor`, `nlp_scaling_method`, `mu_strategy`, `mu_init`, `pardiso_lib_path`, `pardiso_license_message` | `tol = 1e-8`, `print_level = 5` (range 0–12), `max_iter = 5000`, `hessian_approximation = "exact"`. The six `nothing`-able fields leave Ipopt's own default in place when unset |
 | `HiGHSSolverConfig` | `output_flag`, `primal_feasibility_tolerance`, `dual_feasibility_tolerance`, `ipm_optimality_tolerance`, `simplex_iteration_limit`, `ipm_iteration_limit`, `solver`, `raw_options` | `solver = "choose"` (`simplex`, `ipm`, `pdlp` also valid); iteration limits `5000` |
 | `GurobiSolverConfig` | `output_flag`, `feasibility_tol`, `optimality_tol`, `bar_iter_limit`, `mip_gap`, `nl_bar_iter_limit`, `nl_bar_p_feas_tol`, `nl_bar_d_feas_tol`, `nl_bar_c_feas_tol`, `optimality_target`, `raw_options` | `output_flag = 1` (an `Int`, not a `Bool`); the four `nl_bar_*` fields need Gurobi 13+ |
 | `MadNLPSolverConfig` | `tol`, `max_iter`, `print_level`, `hessian_approximation`, `ma97_num_threads`, `raw_options` | `max_iter = 3000`, `print_level = MADNLP_LOG_INFO` (`3`; `MADNLP_LOG_ERROR` is `6`) |
 
 `raw_options` is the escape hatch: any solver attribute not surfaced as a field can go in there as a `String => value` pair. `IpoptSolverConfig` has no `raw_options` — and no `output_file`, because `run_case!` redirects logs to `RESULTS/.../solver_log.txt` and `solver_log_warmstart.txt` itself.
 
-Solver choice is not free: `Check_Coherence_Input_Data` rejects ACOPF or TSC-ACOPF with an LP solver and DCOPF/ED with an NLP solver, and UC requires Gurobi. Gurobi and MadNLP live in package extensions — `using Gurobi` or `using MadNLP` must happen before `run_case!` so the extension loads.
+Solver choice is partly enforced: `Check_Coherence_Input_Data` rejects ACOPF or TSC-ACOPF with an LP solver, UC with any solver but Gurobi, and `trans_stab = true` on ED or UC. A DCOPF or ED run with an NLP solver is accepted. Gurobi and MadNLP live in package extensions — `using Gurobi` or `using MadNLP` must happen before `run_case!` so the extension loads.
 
 ---
 
@@ -523,8 +572,9 @@ Each of these raises an `ArgumentError` before any variable is created. The chec
 | Non-positive `δ_tol_deg` or `t_step` | `validate_transient_config!` | `δ_tol_deg must be positive.` |
 | Any limit pair with `min ≥ max`, or a `*_source` other than `:dgen_pg_limits` | `validate_ts_bound_limits!` | `require E_min_pu < E_max_pu.` |
 | SC with a non-empty `ob_branch_ids`, GL specifying both gens and loads, OB with an empty list, an OB set that islands the network, tripping the slack | `validate_fault_config!` | `OB open of branches […] would island the network …` |
-| An all-GFM fleet (no active SG) | `resolve_sg_gfm_gens!` | `DQ FULL_BUS requires at least one active SG …` |
-| ACOPF with an LP solver, DCOPF with an NLP solver, UC without Gurobi | `Check_Coherence_Input_Data` | raised at the top of `run_case!` |
+| An all-GFM fleet (no active SG) without `allow_all_gfm = true` | `resolve_sg_gfm_gens!` | `DQ FULL_BUS requires at least one active SG …` |
+| An all-GFM fleet with `:swing_propagated` / `:highest_H`, a COI corridor without `gfm_in_coi`, or AVR / governor on | `validate_all_gfm_fleet!` | raised before the warm-start solve |
+| ACOPF with an LP solver, UC without Gurobi, `trans_stab = true` on ED or UC | `Check_Coherence_Input_Data` | raised at the top of `run_case!` |
 
 ---
 
@@ -553,7 +603,7 @@ end
 ```
 
 !!! warning "`TsSimulationConfig(δ_tol_deg = …)` resets the other nine fields"
-    The shorter idiom `simulation = TsSimulationConfig(δ_tol_deg = δ_val)` — used in [Running a case](running_a_case.md) §7.6 — constructs a **fresh** struct, so `t_step`, `clearing_time`, `t_end_sim` and everything else silently revert to their `@kwdef` defaults. That is harmless when the base config already uses defaults, and a silent corruption of the sweep when it does not. The splat above carries the base values through; use it whenever the base `TsSimulationConfig` is non-default. The same caveat applies to `TsBuilderConfig` and `DynModelConfig` overrides.
+    The shorter idiom `simulation = TsSimulationConfig(δ_tol_deg = δ_val)` — used in [Running a case](running_a_case.md) §1.7 — constructs a **fresh** struct, so `t_step`, `clearing_time`, `t_end_sim` and everything else silently revert to their `@kwdef` defaults. That is harmless when the base config already uses defaults, and a silent corruption of the sweep when it does not. The splat above carries the base values through; use it whenever the base `TsSimulationConfig` is non-default. The same caveat applies to `TsBuilderConfig` and `DynModelConfig` overrides.
 
 `load_factor` cannot be swept this way: it is applied to `p_d`/`q_d` inside `load_system`, so a demand sweep needs a fresh `SystemData` per point.
 

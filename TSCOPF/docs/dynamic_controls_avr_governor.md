@@ -1,6 +1,6 @@
 # Dynamic controls: AVR and turbine governor
 
-**How to configure** the optional **AVR** (DQ_4TH path) and **TGOV1 turbine governor** (FULL_BUS, classical or DQ_4TH), and what each writes to disk.
+**How to configure** the optional **AVR** (`DQ_4TH` path) and **TGOV1 turbine governor** (`FULL_BUS`, classical or `DQ_4TH`), and what each writes to disk.
 
 > **Equations, block diagrams, discretisation, and the limiter trade-offs live in Part I, [8. Machine controls: AVR and turbine governor](model/08_controls_avr_governor.md).** This page is the operational counterpart: presets, output files, and dual exports.
 
@@ -18,7 +18,7 @@ come from `gen_dynamic_data_full.csv`; the clamp limits come from
 internal emf, so raising the field ceiling also widens that box.
 
 `Ta_exc = Tb_exc = 0` bypasses the lead-lag (no variables, no rows) — every shipped
-fixture uses this. `Tb_exc = 0` with `Ta_exc > 0` is rejected at validation, as are a
+case uses this. `Tb_exc = 0` with `Ta_exc > 0` is rejected at validation, as are a
 non-positive `T_exc` or `K_exc` (both are divided by).
 
 Pre-fault explicit `bound_E` on `E_fd` still applies when `TsBuilderConfig.bound_E=true` (same `[E_min, E_max]` box as the transient AVR clamp limits). Optional research boxes on `E_fd_unlim_*`, `V_ref`, `Pv_*`, and `Pm_*` use separate `bound_*` toggles (default off).
@@ -52,11 +52,11 @@ DynModelConfig(
 
 ---
 
-## TGOV1 turbine governor — `include_governor=true`, FULL_BUS (classical or DQ_4TH)
+## TGOV1 turbine governor — `include_governor=true`, `FULL_BUS` (classical or `DQ_4TH`)
 
 IEEE TGOV1 primary-frequency control. Replaces constant `P_m` in the swing equation with time-varying `P_mech(t)`. Parameters `R, T1, T2, T3` from `gen_dynamic_data_full.csv`.
 
-Available on **classical FULL_BUS** and **DQ_4TH FULL_BUS** (Milestone 3). Combine with `include_avr=true` on the DQ path for reference-style exciter + governor.
+Available on **classical `FULL_BUS`** and **`DQ_4TH` `FULL_BUS`**. Combine with `include_avr=true` on the DQ path for reference-style exciter + governor.
 
 Note that the set-point is `R`-scaled — `P_ref = R·P_m` at the equilibrium — so the values in `governor_P_ref.csv` are not powers. See [Part I §8](model/08_controls_avr_governor.md) for why.
 
@@ -75,15 +75,16 @@ Note that the set-point is `R`-scaled — `P_ref = R·P_m` at the equilibrium �
 | `Transient_Stability/CSV_duals/dual_gov_valve_sat.csv` | Dual of the `GOV_SMOOTH` clamp equality (this mode only) |
 | `Transient_Stability/CSV_duals/dual_LB_gov_valve.csv`, `dual_UB_gov_valve.csv` | Duals of the `GOV_HARD_BOUND` valve bounds (this mode only) |
 
-> `mechanical_power.csv` is not written when a governor is present: with `USE_PM` the
-> mechanical-power trajectory *is* `governor_P_mech.csv`, and the two files were byte-identical.
-> Runs without a governor still get `mechanical_power.csv`.
+> On an SG-only fleet with a governor, `mechanical_power.csv` is not written: with `USE_PM` the
+> mechanical-power trajectory *is* `governor_P_mech.csv`. Runs without a governor still get
+> `mechanical_power.csv`, and so do mixed SG + GFM runs, where it also carries each
+> converter's constant `P_set`.
 
 ---
 
 ## First-step discretisation
 
-TSCOPF anchors the `t = 1` row of the exciter and governor windows **trapezoidally**, where other implementations take a backward-Euler first step. The physics is identical either way; only the first row of each window differs. Set `DynModelConfig.ode_first_step = :backward_euler` to reproduce that first step exactly. The switch reaches the swing, EMF, exciter and governor rows on both FULL_BUS paths (classical and DQ); on `KRON_REDUCED` it is rejected, because those swing rows have no backward-Euler form.
+TSCOPF anchors the `t = 1` row of the exciter and governor windows **trapezoidally**, where other implementations take a backward-Euler first step. The physics is identical either way; only the first row of each window differs. Set `DynModelConfig.ode_first_step = :backward_euler` to reproduce that first step exactly. The switch reaches the swing, EMF, exciter and governor rows on both `FULL_BUS` paths (classical and DQ); on `KRON_REDUCED` it is rejected, because those swing rows have no backward-Euler form.
 
 ## See also
 

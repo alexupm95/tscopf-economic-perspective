@@ -15,7 +15,6 @@ const SRC_DIR = joinpath(DOCS_DIR, "src")
 for f in (
     "parameter_reference.md",
     "running_a_case.md",
-    "user_guide_input_parameters.md",
     "configuration_map.md",
     "dynamic_controls_avr_governor.md",
 )
@@ -42,7 +41,6 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Part I — The model" => [
-            "model/01_why_stability.md",
             "model/02_steady_state_opf.md",
             "model/03_generator_models.md",
             "model/04_network_kron_fullbus.md",
@@ -63,7 +61,6 @@ makedocs(
             "developer_architecture.md",
         ],
         "API" => "api.md",
-        "Legacy" => "formulations.md",
     ],
     checkdocs = :none,
 )

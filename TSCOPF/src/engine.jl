@@ -54,7 +54,7 @@ Build one with keyword arguments (defaults reproduce the legacy integrated
 and use [`reconfigure`](@ref) to vary a handful of fields (for example a
 δ_tol sweep) without mutating the original or touching global state.
 
-See the user guide, section 1, and the configuration map, section 1, for the
+See the parameter reference, section 1, and the configuration map, section 1, for the
 full field reference.
 """
 Base.@kwdef struct RunConfig
@@ -993,7 +993,7 @@ extra_sc_fault(primary::FaultConfig, id::Int) = FaultConfig(
 Build, solve, and save one TSC-OPF run: validate `cfg`, resolve the results
 folder layout, build the steady-state (and, when `cfg.trans_stab = true`,
 transient-stability) JuMP model, solve it, and write outputs under
-`path_folder_results` (conditional subfolders — see the user guide, section 8).
+`path_folder_results` (conditional subfolders — see Running a case, section 2).
 
 Validation runs in order before any model is built: `Check_Coherence_Input_Data`
 (model/solver pairing), `validate_run_config!`, and, for TSC runs,

@@ -50,7 +50,7 @@ small active-power sink at the faulted bus). These two fields are read only
 for SC. In Ybus terms `+jB` is a capacitor, so a positive imaginary part is
 warned about at validation.
 
-See the user guide / parameter reference, section 5.
+See the parameter reference, section 5.
 """
 Base.@kwdef struct FaultConfig
     fault_type::FaultType = SC

@@ -22,7 +22,7 @@ DC-OPF branch susceptance convention (ignored by AC-OPF and ED):
 - `SIMPLE`: `b = 1/x` (textbook DC, ignores series resistance).
 - `POWERMODELS`: `b = imag(inv(r + x*im))` (matches PowerModels `DCPPowerModel`).
 
-The two agree when `r = 0` and diverge otherwise. See the user guide, section 2.1.
+The two agree when `r = 0` and diverge otherwise. See the parameter reference, section 2.1.
 """
 @enum SusceptanceModel SIMPLE POWERMODELS
 
@@ -93,7 +93,7 @@ susceptance convention (`susceptance_model`).
 Mandatory equalities (slack angle, P/Q balance, branch flow where required
 by the formulation) are always built and are not part of this struct.
 
-See the user guide, section 2, and the configuration map, section 2, for the
+See the parameter reference, section 2, and the configuration map, section 2, for the
 full field reference.
 """
 Base.@kwdef struct DispatchConfig
@@ -182,7 +182,7 @@ end
 Fail fast on an incoherent steady-state builder configuration: unknown
 `type_model` or `cost_type`, `UC` without linear cost, or
 `solve_explicit_dual=true` combined with a formulation/cost/matrix-form it
-does not support (see the user guide, section 2.3).
+does not support (see the parameter reference, section 2.3).
 """
 function validate_dispatch_config!(dc::DispatchConfig)
     dc.type_model in ("ACOPF", "DCOPF", "ED", "UC") ||

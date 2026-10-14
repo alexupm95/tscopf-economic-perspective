@@ -14,8 +14,6 @@
 | [Configuration map](configuration_map.md) | Developers / maintainers | Field map: `RunConfig` → `DispatchConfig` / `TransientConfig` |
 | [Developer architecture](src/developer_architecture.md) | Developers / maintainers | Source layout for TS builders and optional extensions |
 
-`user_guide_input_parameters.md` is kept only as a redirect stub — it was split into the parameter reference and the running-a-case guide.
-
 **Quick start:** the run scripts of the paper are in `runs/` at the repo root.
 
 **Source files for runtime configuration:**
@@ -27,8 +25,6 @@
 - `_transient_stability/FaultConfig.jl` — disturbance specification (SC / GL / OB)
 - `_transient_stability/functions_4_TS_*` — transient-stability variable / equality / inequality builder families
 - `_manage_inputs/functions_2_parse_matpower.jl` — MATPOWER `.m` → in-house CSVs/DataFrames (`Import_Matpower_Case`)
-
-> The legacy `config_file.jl` shim layer has been removed — configure runs through the structs above.
 
 ## Maintainer checklist (feature / solver / API changes)
 

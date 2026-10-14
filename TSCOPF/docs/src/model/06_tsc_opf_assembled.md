@@ -2,7 +2,7 @@
 
 A TSC-OPF run is one optimisation problem: minimise fuel cost at the steady state, subject to power flow **and** a trajectory of rotor angles and speeds that survives a disturbance. The dispatch you would have chosen from a plain OPF is still there. What changes is the feasible set. Any dispatch that would lose synchronism after a fault is ruled out before you see a solution.
 
-This page assembles the pieces from [2. Steady-state OPF](02_steady_state_opf.md) with the transient constraints implemented in TSCOPF today: Kron-reduced TSC-ACOPF (classical 2nd-order machines), the FULL_BUS nodal path, and TSC-DCOPF (linearised electrical power). Swing discretisation and Kron reduction get fuller treatment on [5. Swing dynamics and discretization](05_swing_dynamics.md) and [4. The network: Kron vs FULL_BUS](04_network_kron_fullbus.md); here they appear where they belong in the coupled model.
+This page assembles the pieces from [2. Steady-state OPF](02_steady_state_opf.md) with the transient constraints implemented in TSCOPF today: Kron-reduced TSC-ACOPF (classical 2nd-order machines), the `FULL_BUS` nodal path, and TSC-DCOPF (linearised electrical power). Swing discretisation and Kron reduction get fuller treatment on [5. Swing dynamics and discretization](05_swing_dynamics.md) and [4. The network: Kron vs `FULL_BUS`](04_network_kron_fullbus.md); here they appear where they belong in the coupled model.
 
 | Symbol | Meaning |
 |---|---|
@@ -12,7 +12,7 @@ This page assembles the pieces from [2. Steady-state OPF](02_steady_state_opf.md
 | $\delta^{\mathrm{COI},t}$ | Inertia-weighted centre-of-inertia angle |
 | $\delta^{\max}$ | Half-width of the stability corridor, from `δ_tol_deg` |
 | $G^{\mathrm{red}}, B^{\mathrm{red}}$ | Kron-reduced admittance among generator buses |
-| $Y_{\mathrm{bus}}$ | Full nodal admittance (FULL_BUS path) |
+| $Y_{\mathrm{bus}}$ | Full nodal admittance (`FULL_BUS` path) |
 | $\omega_s$, $\Delta t$ | Synchronous speed [rad/s] and trapezoidal step [s] |
 
 Set `RunConfig.trans_stab = true` and provide `RunConfig.transient` to activate this block on top of the steady-state formulation.
@@ -23,7 +23,7 @@ Set `RunConfig.trans_stab = true` and provide `RunConfig.transient` to activate 
 
 At a high level, TSCOPF builds a single JuMP model with two layers:
 
-1. **Dispatch (pre-fault)** — ACOPF, DCOPF, or ED as in [2. Steady-state OPF](02_steady_state_opf.md).
+1. **Dispatch (pre-fault)** — ACOPF or DCOPF as in [2. Steady-state OPF](02_steady_state_opf.md). ED and UC have no transient formulation; `trans_stab = true` with either throws.
 2. **Transient (fault and post-fault windows)** — classical swing dynamics, network-dependent $P_e$, COI definition, and optional rotor-angle limits relative to COI.
 
 The two layers meet at **initial conditions**: the dispatch $P_g$, $Q_g$, $V_k$, $\theta_k$ must be consistent with initial rotor states $\delta_g^0$, $E_g$, and (when used) $P_{m,g}$. Data flows: steady-state OPF → initial $P$–$\delta$–$E$ link → trapezoidal swing and $P_e$ → COI definition and $\delta$ corridor limits.
@@ -96,7 +96,7 @@ TSCOPF discretises with the trapezoidal rule on each time window (fault `*_tf`, 
     ```
 
 !!! info "Assumption"
-    Mechanical power $P_{m,g}$ is fixed at the dispatch $P_g$ when `mech_power_mode = USE_PG` (Kron default). With `USE_PM`, $P_m$ is an explicit variable (requires `bound_style_δ = :coi_box` on FULL_BUS paths).
+    Mechanical power $P_{m,g}$ is fixed at the dispatch $P_g$ when `mech_power_mode = USE_PG` (Kron default). With `USE_PM`, $P_m$ is an explicit variable (requires `bound_style_δ = :coi_box` on `FULL_BUS` paths).
 
 ### Electrical power during the transient (nonlinear Kron)
 
@@ -156,7 +156,7 @@ Timing (`t_start_fault`, `clearing_time`, `t_end_sim`, `t_step`) lives on `Trans
 
 ---
 
-## TSC-ACOPF with FULL_BUS
+## TSC-ACOPF with `FULL_BUS`
 
 `network_form = FULL_BUS` keeps the full sparse $Y_{\mathrm{bus}}$ and nodal states $V_k^t$, $\theta_k^t$ at every transient step. Generator buses still carry $\delta_g$, $E_g$, and optional $P_m$; $P_e$ and $Q_e$ couple to the terminal bus through the same classical maps as $\eqref{eq:pe-init-p}$–$\eqref{eq:pe-init-q}$.
 
@@ -198,7 +198,7 @@ Initial link: $P_{g(k)} - (\delta_g^0 - \theta_{k(g)})/x'_g = 0$. COI and $\eqre
 ## Worked example
 
 !!! tip "Example 6.1 · IEEE 9-bus, fault at bus 7"
-    Contingency 2 in `INPUT_FILES/9bus/contingencies.csv` applies a fault at bus 7 and trips branch 5–7 after clearing. With `δ_tol_deg = 120`, a binding upper bound on machine 2 often appears in the fault window; its multiplier is exported in `Transient_Stability/CSV_duals/` (row family `dual_δ_COI_upper`).
+    On the 9-bus demonstration case, contingency 2 of `contingencies.csv` applies a fault at bus 7 and trips branch 5–7 after clearing. With `δ_tol_deg = 120`, a binding upper bound on machine 2 often appears in the fault window; its multiplier is exported in `Transient_Stability/CSV_duals/` (row family `dual_δ_COI_upper`).
 
     ```julia
     cfg = RunConfig(
@@ -218,7 +218,7 @@ Initial link: $P_{g(k)} - (\delta_g^0 - \theta_{k(g)})/x'_g = 0$. COI and $\eqre
     res = run_case!(cfg, sys, @__DIR__, joinpath(@__DIR__, "RESULTS"))
     ```
 
-    More presets (FULL_BUS, GL trips, δ_tol sweeps): [Running a case](../running_a_case.md).
+    More presets (`FULL_BUS`, GL trips, δ_tol sweeps): [Running a case](../running_a_case.md).
 
 ---
 
@@ -227,13 +227,13 @@ Initial link: $P_{g(k)} - (\delta_g^0 - \theta_{k(g)})/x'_g = 0$. COI and $\eqre
 | Model piece | Builder / file | Config knob |
 |---|---|---|
 | Steady-state OPF | `_acopf/`, `_dcopf/` | `RunConfig.dispatch` |
-| Route Kron / FULL_BUS / linear | `functions_2_build_TS_model_common.jl` | `dyn_model.network_form`, `dispatch.type_model` |
+| Route Kron / `FULL_BUS` / linear | `functions_2_build_TS_model_common.jl` | `dyn_model.network_form`, `dispatch.type_model` |
 | $\eqref{eq:pe-init-p}$–$\eqref{eq:pe-init-q}$ | `functions_4_TS_kron_eqconst.jl` | always built on AC paths; `Q` omitted on Kron linear |
 | $\eqref{eq:trap-delta}$–$\eqref{eq:trap-swing}$ | `functions_4_TS_kron_eqconst.jl` | always built in tf/tpf windows |
 | $\eqref{eq:pe-kron}$ | `eq_const_tsred_Pe_generic!` | always built (Kron) |
 | $\eqref{eq:coi}$ | `eq_const_kron_COI_generic!` | always built |
 | $\eqref{eq:delta-coi-box}$ | `functions_4_TS_kron_ineqconst.jl` | `ineq_δ_COI_tf_*`, `ineq_δ_COI_tpf_*`; `bound_style_δ` |
-| FULL_BUS nodal KCL | `functions_2_build_TS_model_w_FullBus.jl` | `network_form = FULL_BUS` |
+| `FULL_BUS` nodal KCL | `functions_2_build_TS_model_w_FullBus.jl` | `network_form = FULL_BUS` |
 | $\eqref{eq:pe-linear}$ | `functions_2_build_TS_model_w_Kron_Linear.jl` | `dispatch.type_model = "DCOPF"` |
 | SC / GL topology | `FaultConfig.jl`, fault builders | `dyn_model.fault` |
 | Dual export | `DynDualRegistry.jl` | `RunConfig.save_duals = true` |

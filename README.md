@@ -1,6 +1,7 @@
-# Transient Stability Constrained Optimal Power Flow: An Economic Perspective
+# Shadow Pricing in Transient Stability-Constrained Optimal Power Flow
 
-Code, input data and results of the journal paper of the same title. The repository holds
+Code, input data and results of the paper of the same title
+([arXiv:2610.18563](https://arxiv.org/abs/2610.18563)). The repository holds
 only what the paper uses.
 
 ## Layout

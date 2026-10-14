@@ -30,7 +30,7 @@ Control parameters live in the SG machine file, which must be the extended one �
 
 ![IEEE-type AVR block diagram](../assets/models/avrblock.png)
 
-*Reference AVR block (SEXS). **TSCOPF implements the full chain:** the lead-lag $(1+s T_A)/(1+s T_B)$ followed by the gain-lag $K/(1+T_E s)$, mapping to $(1+s\,T_{a})/(1+s\,T_{b})$ then $K_{\mathrm{exc}}/(1+T_{\mathrm{exc}} s)$ with all four parameters read per generator from `gen_dynamic_data_full.csv`. Setting $T_a = T_b = 0$ bypasses the lead-lag (ANDES `zero_out`), recovering the earlier first-order-only path. The summing junction is exactly the code's $V_{\mathrm{ref}} - V$ with $V$ the generator-bus voltage magnitude, and $E_{\mathrm{MIN}}/E_{\mathrm{MAX}}$ are **not** CSV columns: they come from `TsBoundLimitsConfig.E_min_pu` / `E_max_pu` (see the note on that overload below).*
+*Reference AVR block (SEXS). **TSCOPF implements the full chain:** the lead-lag $(1+s T_A)/(1+s T_B)$ followed by the gain-lag $K/(1+T_E s)$, mapping to $(1+s\,T_{a})/(1+s\,T_{b})$ then $K_{\mathrm{exc}}/(1+T_{\mathrm{exc}} s)$ with all four parameters read per generator from `gen_dynamic_data_full.csv`. Setting $T_a = T_b = 0$ bypasses the lead-lag (ANDES `zero_out`), leaving the first-order gain-lag alone. The summing junction is exactly the code's $V_{\mathrm{ref}} - V$ with $V$ the generator-bus voltage magnitude, and $E_{\mathrm{MIN}}/E_{\mathrm{MAX}}$ are **not** CSV columns: they come from `TsBoundLimitsConfig.E_min_pu` / `E_max_pu` (see the note on that overload below).*
 
 ### Lead-lag stage
 
@@ -60,7 +60,7 @@ Control parameters live in the SG machine file, which must be the extended one �
     \end{equation}
     ```
 
-    When the lead-lag is bypassed, $E_{\mathrm{LL},g}$ is replaced by the raw voltage error $V_{\mathrm{ref},g} - V_{k(g)}$ and the ODE collapses to the earlier first-order form. $V_{k(g)}$ is the voltage magnitude at the generator's bus, taken per time step from `V_tf` / `V_tpf` on the FULL_BUS network. The saturated output $E_{fd,g}$, not the raw state, is what enters the $E'_q$ dynamics of Model 3.4.
+    When the lead-lag is bypassed, $E_{\mathrm{LL},g}$ is replaced by the raw voltage error $V_{\mathrm{ref},g} - V_{k(g)}$ and the ODE collapses to a first-order lag. $V_{k(g)}$ is the voltage magnitude at the generator's bus, taken per time step from `V_tf` / `V_tpf` on the `FULL_BUS` network. The saturated output $E_{fd,g}$, not the raw state, is what enters the $E'_q$ dynamics of Model 3.3.
 
 !!! note "It is a lag, not an integrator"
     The $-\tilde{E}_{fd,g}$ self-decay term is easy to lose sight of, and dropping it turns the block into a pure integrator with very different transient behaviour. To confirm it is there, expand the trapezoidal rows below and divide by $\Delta t$: $\eqref{eq:avr-ode-8}$ comes back with the decay term intact. That is what makes $K/(1+T_E s)$ in the figure the right reading, and what makes the pre-fault link of Model 8.2 the steady state of the same equation rather than an independent assumption.
@@ -97,9 +97,7 @@ The window ODEs are trapezoidal. With $c = \Delta t / (2 T_{\mathrm{exc},g})$, t
 
     The row is normalised on the state, not on $K_{\mathrm{exc},g}$: the gain multiplies the voltage-error term instead of dividing the two field-voltage terms. Both forms describe the same ODE — they differ by the constant factor $K_{\mathrm{exc},g}$ on the whole row — but this one keeps the $(1+c)$ coefficient on $\tilde{E}_{fd}$ that every other state ODE in the package uses, and matches the backward-Euler row below.
 
-    Scaling an equality row leaves the feasible set untouched, so nothing primal moves: same trajectories, same dispatch, same objective. The multiplier is what changes, and it changes *inversely* — $\lambda_{\text{new}} = \lambda_{\text{old}}/K_{\mathrm{exc},g}$, since $\lambda h$ must contribute the same term to the Lagrangian when $h$ is multiplied through. Three things follow. Exciter duals recorded before this convention must be divided by that machine's gain before they are comparable with new ones. Under the old form each row was divided by its *own* $K_{\mathrm{exc},g}$, so `dual_avr_E_fd` was not comparable across a fleet with heterogeneous gains, nor against the swing and EMF duals; now every dynamic row carries the same $(1+c)$ normalisation and all of them are. And `constr_viol_tol` now bites in field-voltage units: with $K_{\mathrm{exc}} = 200$ the old row let a residual of $2\times10^{-6}$ p.u. in $E_{fd}$ pass a $10^{-8}$ tolerance.
-
-    None of this is about conditioning. Ipopt's default `nlp_scaling_method = gradient-based` rescales rows internally, which is exactly why the trajectories did not move; the argument for this form is dual interpretability, not solver behaviour. It would start to matter numerically only under `nlp_scaling_method = "none"`.
+    The normalisation does not change the feasible set — trajectories, dispatch and objective are the same either way — but it sets the scale of the multiplier: dividing a row by $K_{\mathrm{exc},g}$ multiplies its dual by $K_{\mathrm{exc},g}$. With every dynamic row carrying the same $(1+c)$ normalisation, `dual_avr_E_fd` is comparable across machines with different gains and against the swing and EMF duals, and `constr_viol_tol` applies in field-voltage units.
 
 Setting `DynModelConfig.ode_first_step = :backward_euler` replaces the $t=1$ row of each window with the backward-Euler form $\tilde{E}_{fd}^{\,1}(1 + \Delta t/T_{\mathrm{exc}}) - E_{fd}^{\,0} = (\Delta t/T_{\mathrm{exc}})K_{\mathrm{exc}}(V_{\mathrm{ref}} - V^1)$. Every subsequent step stays trapezoidal under either setting. `:trapezoidal` is the package default.
 
@@ -134,7 +132,7 @@ Both trajectories are exported (`dq_E_fd_pu.csv`, `dq_E_fd_unlim_pu.csv`). The g
 
 ![TGOV1 governor block diagram](../assets/models/turbgov.png)
 
-*Reference TGOV1 block. **TSCOPF implements the forward path only.** The $D_t\,\Delta\omega$ damping branch that subtracts from $P_{\mathrm{MECH}}$ at the output summing junction is not implemented — there is no `Dt` column in `gen_dynamic_data_full.csv`, and mechanical damping enters instead through the swing equation's $D_g \Delta\omega_g$ term (Model 5.2). $V_{\mathrm{MIN}}/V_{\mathrm{MAX}}$ on the valve map to `TsBoundLimitsConfig.gov_valve_min_pu` and `gov_valve_max_source`, and bind only when `governor_limiter ≠ GOV_NO_LIMIT`. The `Reference VAR(L)` input is $P_{\mathrm{ref},g}$, which here is $R$-scaled (Model 8.6).*
+*Reference TGOV1 block. **TSCOPF implements the forward path only.** The $D_t\,\Delta\omega$ damping branch that subtracts from $P_{\mathrm{MECH}}$ at the output summing junction is not implemented — there is no `Dt` column in `gen_dynamic_data_full.csv`, and mechanical damping enters instead through the swing equation's $D_g \Delta\omega_g$ term (Model 5.1). $V_{\mathrm{MIN}}/V_{\mathrm{MAX}}$ on the valve map to `TsBoundLimitsConfig.gov_valve_min_pu` and `gov_valve_max_source`, and bind only when `governor_limiter ≠ GOV_NO_LIMIT`. The `Reference VAR(L)` input is $P_{\mathrm{ref},g}$, which here is $R$-scaled (Model 8.6).*
 
 ### Transfer function and the state form the code uses
 
@@ -167,9 +165,9 @@ The builder stamps the valve lag as a first-order ODE and the turbine lead-lag e
 !!! warning "Why not the substituted state form"
     Eliminating $\dot{P}_v$ with $\eqref{eq:gov-valve-8}$ turns $\eqref{eq:gov-mech-8}$ into the familiar two-state form
     $T_3\dot{P}_m = (1 - T_2/T_1)P_v + \bigl[(T_2/T_1)/R\bigr](P_{\mathrm{ref}} - \Delta\omega) - P_m$,
-    which the code used until it was found to be wrong under saturation. That substitution is exact only while the valve is unsaturated: once a limiter clamps $P_v$, $\dot{P}_v \neq \bigl[(P_{\mathrm{ref}}-\Delta\omega)/R - P_v\bigr]/T_1$, yet the feedforward term keeps injecting the raw, unclamped droop signal into the mechanical power — the limiter is bypassed and valve saturation never caps $P_m$ when $T_2 > 0$. Substituting the *discrete* valve equality into the *discrete* substituted mech row recovers $\eqref{eq:gov-mech-8}$ row-for-row, trapezoidal and backward Euler alike, so the two forms are identical whenever the valve is free and differ only where the old one was unphysical.
+    That substitution is exact only while the valve is unsaturated: once a limiter clamps $P_v$, $\dot{P}_v \neq \bigl[(P_{\mathrm{ref}}-\Delta\omega)/R - P_v\bigr]/T_1$, yet the feedforward term keeps injecting the raw, unclamped droop signal into the mechanical power — the limiter is bypassed and valve saturation never caps $P_m$ when $T_2 > 0$. Substituting the *discrete* valve equality into the *discrete* substituted mech row recovers $\eqref{eq:gov-mech-8}$ row-for-row, trapezoidal and backward Euler alike, so the two forms are identical whenever the valve is free and differ only where the substituted one is unphysical.
 
-Discretisation follows the same pattern as the exciter: trapezoidal, $c = \Delta t/(2T_1)$ for the valve and $c = \Delta t/(2T_3)$ for the turbine, with $\eqref{eq:gov-mech-8}$ integrated on both sides and then divided through by $2T_{3,g}$ so the row keeps the same $(1+c)$ normalisation — its multiplier therefore stays on the scale it had under the old form. $t=1$ of the fault window is anchored at $(\tilde{P}_v, P_v, P_m, \Delta\omega) = (P_{m,g}, P_{m,g}, P_{m,g}, 0)$ and $t=1$ of the post-fault window at the last fault-on values, valve **and** turbine both taking the **limited** $P_{v,g}$ there — anything else would put a one-step discontinuity in the valve recurrence at the window seam; the same `ode_first_step` override applies to the first row of each window.
+Discretisation follows the same pattern as the exciter: trapezoidal, $c = \Delta t/(2T_1)$ for the valve and $c = \Delta t/(2T_3)$ for the turbine, with $\eqref{eq:gov-mech-8}$ integrated on both sides and then divided through by $2T_{3,g}$ so the row keeps the same $(1+c)$ normalisation as every other state ODE. $t=1$ of the fault window is anchored at $(\tilde{P}_v, P_v, P_m, \Delta\omega) = (P_{m,g}, P_{m,g}, P_{m,g}, 0)$ and $t=1$ of the post-fault window at the last fault-on values, valve **and** turbine both taking the **limited** $P_{v,g}$ there — anything else would put a one-step discontinuity in the valve recurrence at the window seam; the same `ode_first_step` override applies to the first row of each window.
 
 ### Initialisation and the $R$-scaled set-point
 
@@ -183,7 +181,7 @@ Discretisation follows the same pattern as the exciter: trapezoidal, $c = \Delta
 
     At the pre-fault equilibrium $\Delta\omega_g = 0$ and every derivative vanishes, so $\eqref{eq:gov-valve-8}$ gives $\tilde{P}_{v,g} = P_{\mathrm{ref},g}/R_g$ and $\eqref{eq:gov-mech-8}$ gives $P_{m,g} = P_{v,g}$. Both reduce to $\tilde{P}_{v,g} = P_{v,g} = P_{m,g}$ when $P_{\mathrm{ref},g} = R_g P_{m,g}$, which is what `eq_const_gov_setpoint_init!` pins. Dual: `dual_Pref_init.csv`.
 
-    **$P_{\mathrm{ref},g}$ is therefore not a power.** It carries the droop factor, so a machine with $R = 0.05$ dispatched at $P_m = 0.8$ p.u. has $P_{\mathrm{ref}} = 0.04$. If you compare `governor_P_ref.csv` against a code that defines the set-point directly in power units, expect the factor $R$. The `P_ref_source = :dgen_pg_limits` bound on `V_ref`/`P_ref` boxes is expressed in power units, so `TsBuilderConfig.bound_P_ref = true` combined with a small $R$ effectively never binds.
+    **$P_{\mathrm{ref},g}$ is therefore not a power.** It carries the droop factor, so a machine with $R = 0.05$ dispatched at $P_m = 0.8$ p.u. has $P_{\mathrm{ref}} = 0.04$. If you compare `governor_P_ref.csv` against a code that defines the set-point directly in power units, expect the factor $R$. The `P_ref` box (`P_ref_source = :dgen_pg_limits`) is expressed in power units, so `TsBuilderConfig.bound_P_ref = true` combined with a small $R$ effectively never binds.
 
 `Attach_Governor_fault!` also carries a safety net: if the path did not already stamp `eq_const_Pm_init`, it adds the $P_m = P_g$ pin itself. Without that pin the governor states are shift-invariant — add a constant to $P_{\mathrm{ref}}$, $P_v$, $P_m$ and every governor equation is still satisfied — and $P_m$ drifts to a level decoupled from the dispatch. Under `mech_power_mode = USE_PM` the classical and DQ builders always stamp it, so the fallback should never fire.
 
@@ -225,9 +223,9 @@ DynModelConfig(
 | `include_governor = true` with `network_form = KRON_REDUCED` | `include_governor=true is currently supported only on network_form=FULL_BUS …` |
 | `ode_first_step` outside `(:trapezoidal, :backward_euler)` | `ode_first_step must be :trapezoidal or :backward_euler …` |
 
-The governor restriction to FULL_BUS is a wiring limitation rather than a physical one — the governor layer itself is network-agnostic, it only needs $\Delta\omega_g$ — but the Kron path does not run the coupling initialisation that supplies the warm-started $P_m$ anchor.
+The governor restriction to `FULL_BUS` is a wiring limitation rather than a physical one — the governor layer itself is network-agnostic, it only needs $\Delta\omega_g$ — but the Kron path does not run the coupling initialisation that supplies the warm-started $P_m$ anchor.
 
-Output files, figures, and the full dual-export inventory for both layers are catalogued in the user guide, [Dynamic controls (AVR / governor)](../dynamic_controls_avr_governor.md).
+Output files, figures, and the full dual-export inventory for both layers are catalogued in [Dynamic controls (AVR / governor)](../dynamic_controls_avr_governor.md).
 
 ---
 

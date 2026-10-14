@@ -61,18 +61,35 @@ Two capabilities that most OPF codes keep separate:
     (`main.jl`, `main_loop.jl`), examples and test suite. This repository does not
     ship them. It ships the three cases of the paper under `INPUT_FILES/` and their
     run scripts under `runs/`: see [Quick start](quickstart.md), and put one of
-    those case names where an example says `case = "9bus"`.
+    those case names where an example says `case = "9bus"` (`39bus_gfm` where it
+    says `case = "9bus_gfm"`). Contingency ids differ between cases: check the
+    case's `contingencies.csv`. Where an example writes to `RESULTS/`, the run
+    scripts of this repository write to `new_runs/`.
 
 ## Repository
 
 [github.com/alexupm95/tscopf-economic-perspective](https://github.com/alexupm95/tscopf-economic-perspective). The package is the `TSCOPF/` folder; the
 repository also holds the cases, runs and post-processing of the paper
-"Transient Stability Constrained Optimal Power Flow: An Economic Perspective".
+"Shadow Pricing in Transient Stability-Constrained Optimal Power Flow".
 
 ## Citing
 
-Cite the repository. Machine-readable metadata lives in
-[`CITATION.cff`](https://github.com/alexupm95/tscopf-economic-perspective/blob/main/TSCOPF/CITATION.cff)
-in `TSCOPF/`, which GitHub renders as a *Cite this repository* button.
+If you use this code or data, please cite the paper:
+
+```bibtex
+@misc{coelho2026shadowpricingtransientstabilityconstrained,
+      title={Shadow Pricing in Transient Stability-Constrained Optimal Power Flow},
+      author={Alex Coelho and Araceli Hernandez and Luis Badesa},
+      year={2026},
+      eprint={2610.18563},
+      archivePrefix={arXiv},
+      primaryClass={eess.SY},
+      url={https://arxiv.org/abs/2610.18563},
+}
+```
+
+Machine-readable metadata lives in
+[`CITATION.cff`](https://github.com/alexupm95/tscopf-economic-perspective/blob/main/CITATION.cff)
+at the root of the repository, which GitHub renders as a *Cite this repository* button.
 
 **Author:** Alex Junior da Cunha Coelho — Technical University of Madrid (UPM)

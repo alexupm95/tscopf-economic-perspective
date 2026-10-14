@@ -1,6 +1,6 @@
 # 5. Swing dynamics and discretization
 
-Transient stability in TSCOPF is not a separate time-domain simulation pasted onto an OPF result. The swing equations are **equality constraints** inside the same JuMP model as dispatch. A feasible solution is a dispatch **and** a discrete trajectory of rotor angles and speed deviations that satisfy the trapezoidal discretisation of the classical swing equation, together with the electrical-power map from [4. The network: Kron vs FULL_BUS](04_network_kron_fullbus.md).
+Transient stability in TSCOPF is not a separate time-domain simulation pasted onto an OPF result. The swing equations are **equality constraints** inside the same JuMP model as dispatch. A feasible solution is a dispatch **and** a discrete trajectory of rotor angles and speed deviations that satisfy the trapezoidal discretisation of the classical swing equation, together with the electrical-power map from [4. The network: Kron vs `FULL_BUS`](04_network_kron_fullbus.md).
 
 This page states the continuous-time model, derives the trapezoidal rows the builders install, defines the centre-of-inertia (COI) reference, and explains how rotor-angle corridors are enforced. The full coupled optimisation problem is assembled on [6. The TSC-OPF, assembled](06_tsc_opf_assembled.md).
 
@@ -35,10 +35,10 @@ Each classical machine is a second-order rotor:
     \end{equation}
     ```
 
-$P_g^{\mathrm{ele},t}$ couples to the network (Kron sum in Model 6.5 on [page 6](06_tsc_opf_assembled.md), or nodal classical maps on FULL_BUS). During a short-circuit contingency the same ODE holds in the fault-on and post-fault windows; only $Y_{\mathrm{bus}}$ (and hence electrical power) changes at clearing.
+$P_g^{\mathrm{ele},t}$ couples to the network (Kron sum in Model 6.5 on [page 6](06_tsc_opf_assembled.md), or nodal classical maps on `FULL_BUS`). During a short-circuit contingency the same ODE holds in the fault-on and post-fault windows; only $Y_{\mathrm{bus}}$ (and hence electrical power) changes at clearing.
 
 !!! info "Assumption"
-    Governor and AVR dynamics are not modelled on the default classical path. $P_{m,g}$ is either fixed at dispatch $P_g$ (`mech_power_mode = USE_PG`, Kron default) or an explicit variable (`USE_PM`, required on FULL_BUS). See [8. Machine controls: AVR and turbine governor](08_controls_avr_governor.md) for the extensions that make $P_{m,g}$ and $E_{fd,g}$ time-varying.
+    Governor and AVR dynamics are not modelled on the default classical path. $P_{m,g}$ is either fixed at dispatch $P_g$ (`mech_power_mode = USE_PG`, Kron default) or an explicit variable (`USE_PM`, required on `FULL_BUS`). See [8. Machine controls: AVR and turbine governor](08_controls_avr_governor.md) for the extensions that make $P_{m,g}$ and $E_{fd,g}$ time-varying.
 
 ---
 
@@ -106,7 +106,7 @@ Absolute rotor angles are gauge-dependent. TSCOPF measures stability relative to
 
     `eq_const_kron_COI_generic!` enforces $\eqref{eq:coi-5}$ at every step. $\mathcal{G}_{\mathrm{act}}$ is the **active** generator set for the disturbance window (`active_gen` passed to the builder). For SC faults it equals all machines; for **GL generator trip** it excludes disconnected units so COI is defined on the synchronized survivors only.
 
-    The weights come from `_coi_weights`, which looks `H_g` up **by generator id** rather than by row position — the two coincide only while `DGEN_DYN.id == 1:n`, which `validate_dgen_dyn_row_ids!` guarantees on the SG-only paths but not on a mixed fleet. On a mixed SG + GFM fleet $\mathcal{G}_{\mathrm{act}}$ is narrowed to the machines unless `DynModelConfig.gfm_in_coi` is set, in which case each converter joins with the equivalent inertia of its droop loop, $H^{\mathrm{eff}}_c = T_{f,c}/(2 m_{p,c})$ — see chapter 9.
+    The weights come from `_coi_weights`, which looks `H_g` up **by generator id** rather than by row position — the two coincide only while `DGEN_DYN.id == 1:n`, which `validate_dgen_dyn_row_ids!` guarantees on the SG-only paths but not on a mixed fleet. On a mixed SG + GFM fleet $\mathcal{G}_{\mathrm{act}}$ is narrowed to the machines unless `DynModelConfig.gfm_in_coi` is set, in which case each converter joins with the equivalent inertia of its droop loop, $H^{\mathrm{eff}}_c = T^P_{f,c}/(2 m_{p,c})$ — see chapter 9.
 
 Synchronism is preserved when each machine stays within a corridor around COI, not around zero.
 
@@ -116,7 +116,7 @@ Synchronism is preserved when each machine stays within a corridor around COI, n
 
 Set a symmetric half-width with `δ_tol_deg`, or independent below/above limits with `δ_tol_deg_lower` and `δ_tol_deg_upper` (degrees, each positive; unset fields fall back to `δ_tol_deg`). Internally `common_ts_parameters` builds `δ_tol = (−lower, +upper)` in radians.
 
-Two algebraic styles exist. They bound $\delta_g^t - \delta^{\mathrm{COI},t}$ inside $[\delta^{\mathrm{low}}, \delta^{\mathrm{hi}}]$ (symmetric when only `δ_tol_deg` is set) but produce different JuMP rows (and therefore different dual exports).
+Two COI-referenced styles exist. They bound $\delta_g^t - \delta^{\mathrm{COI},t}$ inside $[\delta^{\mathrm{low}}, \delta^{\mathrm{hi}}]$ (symmetric when only `δ_tol_deg` is set) but produce different JuMP rows (and therefore different dual exports).
 
 ### Direct COI box (`:coi_box`)
 
@@ -128,7 +128,7 @@ Two algebraic styles exist. They bound $\delta_g^t - \delta^{\mathrm{COI},t}$ in
     \end{equation}
     ```
 
-    `ineq_const_kron_δ_COI_generic!` stamps $\eqref{eq:delta-coi-box-5}$ directly on $(\delta_g^t, \delta^{\mathrm{COI},t})$ using `δ_tol[1]` / `δ_tol[2]` from `common_ts_parameters`. **Required** when `mech_power_mode = USE_PM` (explicit $P_{m,g}$). Default on FULL_BUS paths.
+    `ineq_const_kron_δ_COI_generic!` stamps $\eqref{eq:delta-coi-box-5}$ directly on $(\delta_g^t, \delta^{\mathrm{COI},t})$ using `δ_tol[1]` / `δ_tol[2]` from `common_ts_parameters`. **Required** (or another box-form style) when `mech_power_mode = USE_PM` (explicit $P_{m,g}$), and therefore on every `FULL_BUS` run. It is not the default: set `bound_style_δ = :coi_box` explicitly.
 
 ### Swing-propagated (`:swing_propagated`)
 
@@ -144,8 +144,9 @@ For $t > 1$, substitute the trapezoidal updates into $\eqref{eq:delta-coi-box-5}
 
 Every network form dispatches on `bound_style_δ` through the same pair of entry points,
 `_add_δ_bounds_fault!` / `_add_δ_bounds_postf!` in `functions_4_TS_kron_ineqconst.jl` — Kron,
-Kron-linear, classical FULL_BUS and DQ FULL_BUS alike. Defaults differ (`:swing_propagated`
-on Kron, `:coi_box` on the FULL_BUS builders), but the choice is honoured everywhere.
+Kron-linear, classical `FULL_BUS` and DQ `FULL_BUS` alike. The default is `:swing_propagated`
+everywhere; `FULL_BUS` requires `USE_PM`, which rejects it, so a `FULL_BUS` run must name a
+box-form style. The choice is honoured on every network form.
 
 ### Machine-referenced (`:highest_H`, `:ref_gen`)
 
@@ -235,7 +236,7 @@ Discrete steps are built from `TransientConfig.simulation`:
 | Field | Role |
 |---|---|
 | `t_start_fault` | Start of disturbance |
-| `clearing_time` | Fault duration (SC only); clearing at $t_{\mathrm{start}} + t_{\mathrm{clear}}$ |
+| `clearing_time` | Fault duration (SC only); clearing at $t_{\mathrm{start}} + t_{\mathrm{clear}}$. The fault-on network still holds at that sample, so the fault effectively lasts `clearing_time + t_step` |
 | `t_end_sim` | End of post-fault horizon |
 | `t_step` | $\Delta t$ in Models 5.2–5.3 |
 | `f_syn`, `Δω_0` | $\omega_s = 2\pi f_{\mathrm{syn}}$; initial speed deviation |
@@ -243,7 +244,10 @@ Discrete steps are built from `TransientConfig.simulation`:
 For a **short-circuit** (`FaultConfig` type SC), `time_windows_sc` builds:
 
 - **Fault-on** `*_tf`: $t \in [t_{\mathrm{start}}, t_{\mathrm{start}} + t_{\mathrm{clear}}]$ stepped by $\Delta t$
-- **Post-fault** `*_tpf`: $t \in (t_{\mathrm{clear}}, t_{\mathrm{end}}]$ stepped by $\Delta t$
+- **Post-fault** `*_tpf`: $t \in [t_{\mathrm{start}} + t_{\mathrm{clear}} + \Delta t, t_{\mathrm{end}}]$ stepped by $\Delta t$
+
+The fault-on network therefore applies through the clearing sample, and the post-fault
+network takes over one step later: a 100 ms fault on a 5 ms grid is `clearing_time = 0.095`.
 
 Generator/load trips (GL) use a **single** window from fault start to `t_end_sim`. Network topology and $Y_{\mathrm{bus}}$ change between windows as described on [page 4](04_network_kron_fullbus.md).
 
@@ -273,11 +277,11 @@ Generator/load trips (GL) use a **single** window from fault start to `t_end_sim
 
     After `run_case!(cfg, sys, path_main, path_results)`:
 
-    1. **`Transient_Stability/CSV/generator_delta.csv`** — check $\delta_g^t - \delta^{\mathrm{COI},t}$ stays inside $\pm\delta^{\max}$.
-    2. **`Transient_Stability/CSV/generator_delta_omega.csv`** — verify trapezoidal consistency with the angle trace.
+    1. **`Transient_Stability/CSV/angle_rel_COI.csv`** — check $\delta_g^t - \delta^{\mathrm{COI},t}$ stays inside $\pm\delta^{\max}$.
+    2. **`Transient_Stability/CSV/speed_dev.csv`** against **`angle_abs.csv`** — verify trapezoidal consistency of the speed and angle traces.
     3. Halve `t_step` and re-run; if the optimal dispatch changes, the coarse grid was masking swing peaks.
 
-    FULL_BUS runs need `network_form = FULL_BUS`, `mech_power_mode = USE_PM`, and `bound_style_δ = :coi_box` (Example 4.1 on [page 4](04_network_kron_fullbus.md)).
+    `FULL_BUS` runs need `network_form = FULL_BUS`, `mech_power_mode = USE_PM`, and `bound_style_δ = :coi_box` (Example 4.1 on [page 4](04_network_kron_fullbus.md)).
 
 ---
 
@@ -291,7 +295,7 @@ Generator/load trips (GL) use a **single** window from fault start to `t_end_sim
 | $\eqref{eq:delta-coi-box-5}$ direct | `ineq_const_kron_δ_COI_generic!` | `functions_4_TS_kron_ineqconst.jl` |
 | Propagated corridor | `ineq_const_kron_δ_COI_generic_modified!` | `functions_4_TS_kron_ineqconst.jl` |
 | Kron window assembly | `Define_Fault_Dynamic_Model_tsred!`, `Define_PostFault_Dynamic_Model_tsred!` | `functions_2_build_TS_model_w_Kron.jl` |
-| FULL_BUS bound dispatch | `_add_fullbus_δ_COI_bounds_fault!` | `functions_4_TS_fullbus_ineqconst.jl` |
+| `FULL_BUS` bound dispatch | `_add_fullbus_δ_COI_bounds_fault!` | `functions_4_TS_fullbus_ineqconst.jl` |
 | Timing / `δ_tol` tuple | `common_ts_parameters`, `time_windows_sc` | `TsConfig.jl` |
 
 Electrical power during the swing and the steady-state initial links are Models 6.1–6.5 on [6. The TSC-OPF, assembled](06_tsc_opf_assembled.md).

@@ -25,7 +25,7 @@ synchronous frequency `f_syn`, and the rotor-angle stability tolerance
 `bound_style_δ = :pairwise`, which bounds |δ_i − δ_j| for every unordered pair
 of synchronised units instead of measuring each unit against a common reference.
 
-See the user guide, section 3.1.
+See the parameter reference, section 3.1.
 """
 Base.@kwdef struct TsSimulationConfig
     δ_tol_deg::Float64 = 90.0         # symmetric |δ − δ_COI| limit [deg] when overrides unset
@@ -124,7 +124,7 @@ likewise always built.
 COI-referenced stability inequalities and optional explicit variable bounds
 control what limits the solution space.
 
-See the user guide, section 3.2.
+See the parameter reference, section 3.2.
 """
 Base.@kwdef struct TsBuilderConfig
     # Variable bounds as explicit inequalities (mostly off in production)
@@ -316,7 +316,7 @@ Nests `simulation::TsSimulationConfig` (timing and δ_tol),
 `dyn_model.allow_gfm=true`, `gfm_dynamic_filename` names the separate GFM
 parameter CSV (default `gfm_dynamic_data.csv`).
 
-See the user guide, section 3, and the configuration map, section 3.
+See the parameter reference, section 3, and the configuration map, section 3.
 """
 Base.@kwdef struct TransientConfig
     simulation::TsSimulationConfig = TsSimulationConfig()

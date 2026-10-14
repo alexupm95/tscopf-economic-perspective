@@ -1,8 +1,8 @@
-# 4. The network: Kron vs FULL_BUS
+# 4. The network: Kron vs `FULL_BUS`
 
-The transient network model answers one question: how does electrical torque on each machine depend on rotor angles (and, on the nodal path, bus voltages) during and after a fault? TSCOPF offers two answers. **Kron reduction** collapses loads and passive buses into a small $n_{\mathrm{gen}} \times n_{\mathrm{gen}}$ admittance among generator internal nodes. **FULL_BUS** keeps every network bus, enforces KCL at each time step, and couples generators to their terminal buses explicitly.
+The transient network model answers one question: how does electrical torque on each machine depend on rotor angles (and, on the nodal path, bus voltages) during and after a fault? TSCOPF offers two answers. **Kron reduction** collapses loads and passive buses into a small $n_{\mathrm{gen}} \times n_{\mathrm{gen}}$ admittance among generator internal nodes. **`FULL_BUS`** keeps every network bus, enforces KCL at each time step, and couples generators to their terminal buses explicitly.
 
-This page gives the only full network derivation in Part I (Schur complement / Kron). The assembled optimisation problem is on [6. The TSC-OPF, assembled](06_tsc_opf_assembled.md). Electrical power during the swing uses Model 6.5 there for Kron and nodal balances for FULL_BUS.
+This page gives the only full network derivation in Part I (Schur complement / Kron). The assembled optimisation problem is on [6. The TSC-OPF, assembled](06_tsc_opf_assembled.md). Electrical power during the swing uses Model 6.5 there for Kron and nodal balances for `FULL_BUS`.
 
 | Symbol | Meaning |
 |---|---|
@@ -71,14 +71,14 @@ Kron is a good fit when:
 - You want the smallest NLP: only generator $\delta_g^t$, $\Delta\omega_g^t$, and $P_e$ trajectories, not $V_k^t$, $\theta_k^t$ at every load bus.
 - Faults change $Y_{\mathrm{bus}}$ but the **same reduction procedure** applies to fault-on and post-fault topologies (SC augments the fault bus; post-fault rebuilds `DCIR` without the cleared line).
 
-Kron is **not** appropriate when you need ZIP load voltage dependence, explicit reactive balance at each bus during the swing, or dq machine models that require terminal $V$, $\theta$ at every step. Those paths use FULL_BUS.
+Kron is **not** appropriate when you need ZIP load voltage dependence, explicit reactive balance at each bus during the swing, or dq machine models that require terminal $V$, $\theta$ at every step. Those paths use `FULL_BUS`.
 
 !!! info "Assumption"
     On the Kron path, reactive power during the swing does not enter the swing equation. $Q_e$ can be reconstructed post-solve as a diagnostic (`expressions[:Qe_tf]` on Kron TSC-ACOPF) but is not a primal constraint.
 
 ---
 
-## FULL_BUS nodal path
+## `FULL_BUS` nodal path
 
 `network_form = FULL_BUS` skips $\eqref{eq:kron-schur}$. The builder keeps the full sparse $Y_{\mathrm{bus}}$ at each time step and introduces $V_k^t$, $\theta_k^t$ for **every** bus in the fault and post-fault windows.
 
@@ -96,7 +96,7 @@ Kron is **not** appropriate when you need ZIP load voltage dependence, explicit 
 
 Mandatory differences from Kron:
 
-| Topic | Kron (`KRON_REDUCED`) | FULL_BUS |
+| Topic | Kron (`KRON_REDUCED`) | `FULL_BUS` |
 |---|---|---|
 | Transient states | $\delta_g$, $\Delta\omega_g$, $P_e$ (and optional $P_m$) | Above **plus** $V_k$, $\theta_k$ at all buses |
 | Network matrix | $Y^{\mathrm{red}}$ among generators | Full $Y_{\mathrm{bus}}$ per fault topology |
@@ -120,7 +120,7 @@ Both paths rebuild admittance when the network changes.
 | Fault-on | Augmented $Y$ with fault shunt at `faulted_bus` | Trip gens (`g_status`) or scale $P_d,Q_d$ on `DBUS` copy |
 | Post-fault | Rebuild without cleared branch (`circuit_id` in `contingencies.csv`) | *(no separate post-fault window)* |
 
-Kron: `Calculate_Ybus_fault_SC_Kron` → `Reduce_Matrix` → $G^{\mathrm{red}}, B^{\mathrm{red}}$ for the fault window; `Calculate_Ybus_postf_ClearFault_Kron` for post-fault. FULL_BUS: parallel routines in `functions_4_admittance_matrices.jl` / full-bus builders without Schur complement.
+Kron: `Calculate_Ybus_fault_SC_Kron` → `Reduce_Matrix` → $G^{\mathrm{red}}, B^{\mathrm{red}}$ for the fault window; `Calculate_Ybus_postf_ClearFault_Kron` for post-fault. `FULL_BUS`: parallel routines in `functions_4_admittance_matrices.jl` / full-bus builders without Schur complement.
 
 Exported matrices land in `RESULTS/.../Bus_Matrices/` when `trans_stab = true`.
 
@@ -144,7 +144,7 @@ Exported matrices land in `RESULTS/.../Bus_Matrices/` when `trans_stab = true`.
     )
     ```
 
-    **FULL_BUS** — requires `USE_PM`, `:coi_box`, and accepts ZIP loads:
+    **`FULL_BUS`** — requires `USE_PM`, `:coi_box`, and accepts ZIP loads:
 
     ```julia
     cfg_full = RunConfig(
@@ -164,7 +164,7 @@ Exported matrices land in `RESULTS/.../Bus_Matrices/` when `trans_stab = true`.
     )
     ```
 
-    Compare `Transient_Stability/CSV/` trajectories: Kron writes generator-centred angles; FULL_BUS adds `bus_*.csv` and `generator_*.csv` with nodal $V$, $\theta$. Primal objectives and dispatch can differ when ZIP load matters; on constant-Z defaults they should be close but not identical.
+    Compare `Transient_Stability/CSV/` trajectories: Kron writes generator-centred angles; `FULL_BUS` adds `bus_*.csv` and `generator_*.csv` with nodal $V$, $\theta$. Primal objectives and dispatch can differ when ZIP load matters; on constant-Z defaults they should be close but not identical.
 
 ---
 
@@ -177,7 +177,7 @@ Exported matrices land in `RESULTS/.../Bus_Matrices/` when `trans_stab = true`.
 | SC / post-fault Kron $Y$ | `Calculate_Ybus_fault_SC_Kron`, `Calculate_Ybus_postf_ClearFault_Kron` | Fault shunt + branch trip |
 | GL Kron $Y$ | `Calculate_Ybus_fault_LG_Kron` | After gen/load scaling on copy |
 | Kron TS builder | `Make_Dynamic_Model_tsred!` | `functions_2_build_TS_model_w_Kron.jl` |
-| FULL_BUS TS builder | `Make_Dynamic_Model_fullbus!` | `functions_2_build_TS_model_w_FullBus.jl` |
+| `FULL_BUS` TS builder | `Make_Dynamic_Model_fullbus!` | `functions_2_build_TS_model_w_FullBus.jl` |
 | Network form knob | `DynModelConfig.network_form` | `KRON_REDUCED` \| `FULL_BUS` |
 
 Swing equations and time discretisation: [5. Swing dynamics and discretization](05_swing_dynamics.md). Generator internals: [3. Generator models](03_generator_models.md).

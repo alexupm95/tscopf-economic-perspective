@@ -51,7 +51,7 @@ Extension registration happens in each extension module's `__init__()` so precom
 | `set_solver_log_path!` | `functions_2_setup_optim.jl` | Redirect solver text output to an absolute path (`output_file` / `LogFile` / `log_file`). |
 | `release_solver_backend!` | same | Tear down after exports: optional Ipopt `finalize`, `empty!(model)`, `GC.gc()`. Called at end of `run_case!` and explicit dual LP builders. |
 
-`engine.jl` writes `solver_log.txt` for the main solve and `solver_log_warmstart.txt` when a DCOPF or FULL_BUS ACOPF pre-solve runs. See [Running a case — solver logs](running_a_case.md).
+`engine.jl` writes `solver_log.txt` for the main solve and `solver_log_warmstart.txt` when a DCOPF or `FULL_BUS` ACOPF pre-solve runs. See [Running a case — solver logs](running_a_case.md).
 
 !!! tip "Adding a new optional backend"
     Follow the same shape: a `TSCOPFxExt` module gated on `[extensions]` /

@@ -2,8 +2,8 @@
 
 TSCOPF couples dispatch to transient constraints through a **machine model** at each generator bus. Two orders are implemented today:
 
-- **Classical second-order** (`gen_order = CLASSICAL_2ND`) — one internal voltage $E'$ behind transient reactance $x'_d$; states $\delta_g$ and $\Delta\omega_g$. Default on Kron and FULL_BUS.
-- **Fourth-order $dq$** (`gen_order = DQ_4TH`) — two-axis transient emfs $E'_d$, $E'_q$ with stator algebraic balance; states $\delta_g$, $\Delta\omega_g$, $E'_{d,g}$, $E'_{q,g}$ plus currents $I_{d,g}$, $I_{q,g}$. **FULL_BUS TSC-ACOPF only.**
+- **Classical second-order** (`gen_order = CLASSICAL_2ND`) — one internal voltage $E'$ behind transient reactance $x'_d$; states $\delta_g$ and $\Delta\omega_g$. Default on Kron and `FULL_BUS`.
+- **Fourth-order $dq$** (`gen_order = DQ_4TH`) — two-axis transient emfs $E'_d$, $E'_q$ with stator algebraic balance; states $\delta_g$, $\Delta\omega_g$, $E'_{d,g}$, $E'_{q,g}$ plus currents $I_{d,g}$, $I_{q,g}$. **`FULL_BUS` TSC-ACOPF only.**
 
 Swing discretisation and COI bounds are identical in structure across orders; see [5. Swing dynamics and discretization](05_swing_dynamics.md). Optional AVR and governor layers are in [8. Machine controls](08_controls_avr_governor.md), and grid-forming converters in [9. Grid-forming inverters](09_grid_forming.md).
 
@@ -27,9 +27,9 @@ Select the order with `DynModelConfig.gen_order`. Machine columns live in `gen_d
 
 ![Classical machine: constant emf behind transient reactance](../assets/models/generator2order.png)
 
-*The whole of the classical model, electrically. $E\angle\delta$ is the internal emf held constant through the transient (`E` in code, magnitude bounded by `TsBoundLimitsConfig.E_min_pu`/`E_max_pu` when `bound_E = true`), $jx'_d$ is the transient reactance `Xd_tr`, and $V$ is the terminal — the Kron-reduced fictitious node, or the FULL_BUS network bus $k(g)$. There is no stator resistance and no $q$-axis: the machine is one source behind one reactance, and all of its dynamics sit in the rotor equations below.*
+*The whole of the classical model, electrically. $E\angle\delta$ is the internal emf held constant through the transient (`E` in code, magnitude bounded by `TsBoundLimitsConfig.E_min_pu`/`E_max_pu` when `bound_E = true`), $jx'_d$ is the transient reactance `Xd_tr`, and $V$ is the terminal — the Kron-reduced fictitious node, or the `FULL_BUS` network bus $k(g)$. There is no stator resistance and no $q$-axis: the machine is one source behind one reactance, and all of its dynamics sit in the rotor equations below.*
 
-The classical model is the standard **single-circuit** representation used in many power-system texts: a constant voltage source $E'_g \angle \delta_g$ behind transient reactance $x'_{d,g}$, with rotor angle $\delta_g$ and per-unit speed deviation $\Delta\omega_g$ as states. Electrical torque enters through active power $P_g^{\mathrm{ele}}$ (Kron reduced sum or classical terminal map on FULL_BUS).
+The classical model is the standard **single-circuit** representation used in many power-system texts: a constant voltage source $E'_g \angle \delta_g$ behind transient reactance $x'_{d,g}$, with rotor angle $\delta_g$ and per-unit speed deviation $\Delta\omega_g$ as states. Electrical torque enters through active power $P_g^{\mathrm{ele}}$ (Kron reduced sum or classical terminal map on `FULL_BUS`).
 
 !!! note "Model 3.1 (classical machine, schematic)"
     ```math
@@ -55,7 +55,7 @@ For textbook derivations of the round-rotor classical model, see standard refere
 
 The fourth-order model (also called a **two-axis** or $dq$ model) keeps separate transient dynamics on the direct and quadrature axes. It is more realistic than Model 3.1 when you need terminal voltage and current to co-evolve with the swing during a fault. TSCOPF follows the usual simplification: **subtransient** dynamics are neglected by assuming damper-winding transients are fast enough to settle (Weckesser et al.; Liederer et al. on TSC formulations).
 
-The machine is represented by transient emfs $E'_{d,g}$, $E'_{q,g}$ behind transient reactances $x'_{q,g}$, $x'_{d,g}$ and stator resistance $r_{a,g}$. The four differential states are $E'_{q,g}$, $E'_{d,g}$, $\Delta\omega_g$, and $\delta_g$. Stator currents $I_{d,g}$, $I_{q,g}$ are additional algebraic (or coupled) variables at each time step on the FULL_BUS path.
+The machine is represented by transient emfs $E'_{d,g}$, $E'_{q,g}$ behind transient reactances $x'_{q,g}$, $x'_{d,g}$ and stator resistance $r_{a,g}$. The four differential states are $E'_{q,g}$, $E'_{d,g}$, $\Delta\omega_g$, and $\delta_g$. Stator currents $I_{d,g}$, $I_{q,g}$ are additional algebraic (or coupled) variables at each time step on the `FULL_BUS` path.
 
 Terminal $d$–$q$ voltages are the Park components of bus voltage $V_{k(g)}$, $\theta_{k(g)}$ in the rotor frame: $V_{d} = V_{k(g)}\sin(\delta_g - \theta_{k(g)})$, $V_{q} = V_{k(g)}\cos(\delta_g - \theta_{k(g)})$.
 
@@ -122,7 +122,7 @@ The swing pair matches Model 5.1:
     \end{equation}
     ```
 
-    Trapezoidal rows are shared with the classical path (`eq_const_kron_δ_swingeq_generic!`, `eq_const_tsred_Δω_swingeq_generic!` on FULL_BUS builders).
+    Trapezoidal rows are shared with the classical path (`eq_const_kron_δ_swingeq_generic!`, `eq_const_tsred_Δω_swingeq_generic!` on `FULL_BUS` builders).
 
 ### Electrical torque and power
 
@@ -144,7 +144,7 @@ The swing pair matches Model 5.1:
 
 ### Coupling to the network
 
-Unlike the classical FULL_BUS map (active power as a function of $E'$, $V$, $\delta$ only), the $dq$ path injects **currents** into nodal KCL:
+Unlike the classical `FULL_BUS` map (active power as a function of $E'$, $V$, $\delta$ only), the $dq$ path injects **currents** into nodal KCL:
 
 - Active balance uses $P$-injection from $I_d$, $I_q$, $V$, $\theta$, $\delta$ (`eq_const_dq_Pbalance!`).
 - Reactive balance is analogous (`eq_const_dq_Qbalance!`).
@@ -179,13 +179,13 @@ Pre-fault, `eq_const_dq_init_steady_state!` pins the machine to the solved ACOPF
         trans_stab = true, case = "9bus", solver_name = "Ipopt",
         dispatch = DispatchConfig(type_model = "ACOPF"),
         transient = TransientConfig(
+            gen_dynamic_filename = "gen_dynamic_data_full.csv",
             simulation = TsSimulationConfig(δ_tol_deg = 90.0),
             dyn_model = DynModelConfig(
                 gen_order = DQ_4TH,
                 network_form = FULL_BUS,
                 mech_power_mode = USE_PM,
                 bound_style_δ = :coi_box,
-                gen_dynamic_filename = "gen_dynamic_data_full.csv",
                 zip_load_p = (1.0, 0.0, 0.0),  # (Z, I, P) — active demand, constant impedance
                 zip_load_q = (1.0, 0.0, 0.0),  # (Z, I, P) — reactive demand, constant impedance
                 fault = FaultConfig(contingency_id = 2),
@@ -194,7 +194,7 @@ Pre-fault, `eq_const_dq_init_steady_state!` pins the machine to the solved ACOPF
     )
     ```
 
-    Compare trajectories in `Transient_Stability/CSV/generator_*.csv` (including `Ed`, `Eq`, `Id`, `Iq`) against the classical Kron preset in Example 5.1 on [page 5](05_swing_dynamics.md). Expect different $P_g^{\mathrm{ele}}$ paths during the fault because reactive balance and axis flux dynamics are explicit.
+    Compare trajectories in `Transient_Stability/CSV/generator_*.csv` and the two-axis states in `dq_Ed_pu.csv`, `dq_Eq_pu.csv`, `dq_Id_pu.csv`, `dq_Iq_pu.csv` against the classical Kron preset in Example 5.1 on [page 5](05_swing_dynamics.md). Expect different $P_g^{\mathrm{ele}}$ paths during the fault because reactive balance and axis flux dynamics are explicit.
 
 ---
 
@@ -202,8 +202,8 @@ Pre-fault, `eq_const_dq_init_steady_state!` pins the machine to the solved ACOPF
 
 | Piece | Function | File |
 |---|---|---|
-| Classical Kron / FULL_BUS builders | `Make_Dynamic_Model_tsred!`, `Make_Dynamic_Model_fullbus!` | `functions_2_build_TS_model_w_Kron.jl`, `functions_2_build_TS_model_w_FullBus.jl` |
-| $dq$ FULL_BUS builder | `Make_Dynamic_Model_dqfullbus!` | `functions_2_build_TS_model_w_DqFullBus.jl` |
+| Classical Kron / `FULL_BUS` builders | `Make_Dynamic_Model_tsred!`, `Make_Dynamic_Model_fullbus!` | `functions_2_build_TS_model_w_Kron.jl`, `functions_2_build_TS_model_w_FullBus.jl` |
+| $dq$ `FULL_BUS` builder | `Make_Dynamic_Model_dqfullbus!` | `functions_2_build_TS_model_w_DqFullBus.jl` |
 | Pre-fault $dq$ steady state | `eq_const_dq_init_steady_state!` | `functions_4_TS_dq_eqconst.jl` |
 | $\eqref{eq:dq-vd}$–$\eqref{eq:dq-pe}$ | `eq_const_dq_machine_algebra!` | `functions_4_TS_dq_eqconst.jl` |
 | $\eqref{eq:dq-eq-ode}$–$\eqref{eq:dq-ed-ode}$ (trapezoidal) | `eq_const_dq_emf_dynamics!` | `functions_4_TS_dq_eqconst.jl` |

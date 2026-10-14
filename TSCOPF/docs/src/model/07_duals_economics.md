@@ -62,7 +62,7 @@ ACOPF uses the same $\pi_k = +\lambda_k$ rule on the active balance rows from [2
 | Primal JuMP duals | `RunConfig.save_duals = true` | `Dispatch/CSV_duals/`, `Dispatch_Duals.xlsx` | Default; all dispatch types |
 | Explicit dual LP | `dispatch.solve_explicit_dual = true` | `Dispatch_Dual/` | Linear ED or DCOPF only; strong-duality check |
 
-The explicit LP treats prices as decision variables and recovers the same **price** when strong duality holds (`test/runtests_explicit_dual.jl`), but from a multiplier of the opposite sign: it codes stationarity as $c_g + \lambda_k = 0$ (`src/_dcopf/functions_build_DC_OPF_Dual.jl:141`), so its $\lambda_k = -c_g$ and there $\pi_k = -\lambda_k$. In short, $\lambda^{\text{explicit}}_k = -\lambda^{\text{primal}}_k$ and both give $\pi_k = c_g$ at the marginal unit.
+The explicit LP treats prices as decision variables and recovers the same **price** when strong duality holds, but from a multiplier of the opposite sign: it codes stationarity as $c_g + \lambda_k = 0$ (`eq_const_dcopf_dual_stationarity_Pg!` in `src/_dcopf/functions_build_DC_OPF_Dual.jl`), so its $\lambda_k = -c_g$ and there $\pi_k = -\lambda_k$. In short, $\lambda^{\text{explicit}}_k = -\lambda^{\text{primal}}_k$ and both give $\pi_k = c_g$ at the marginal unit.
 
 ---
 
@@ -115,19 +115,25 @@ CSV mirrors: one file per family under `Dispatch/CSV_duals/` (e.g. `dual_P_balan
 
 Authoritative source: `src/_transient_stability/DynDualRegistry.jl`, which holds **three** spec lists selected by the active path — `CLASSICAL_KRON_DUAL_SPECS` (the table below), `CLASSICAL_FULL_BUS_DUAL_SPECS` (adds nodal balance and voltage-bound families), and `DQ_4TH_FULL_BUS_DUAL_SPECS` (drops the classical-only entries and adds the two-axis machine, AVR, governor, and GFM pre-fault families). The control and converter duals — `dual_Vref_init`, `dual_avr_E_fd`, `dual_avr_E_fd_sat`, `dual_Pref_init`, `dual_gov_valve`, `dual_gov_mech`, and the limiter-specific ones — appear only on that third list. Read them alongside [8. Machine controls](08_controls_avr_governor.md) and [9. Grid-forming inverters](09_grid_forming.md), which explain what each multiplier prices.
 
-| XLSX sheet (legacy name) | Registry export | CSV (if any) |
+A sheet is named after its registry export with `dual_` dropped and `_Duals` appended; the CSV files use ASCII names.
+
+| XLSX sheet | Registry export | CSV |
 |---|---|---|
 | `Pe_init_Duals` | `dual_Pe_init` | `dual_Pe_init.csv` |
-| `delta_COI_Duals` | `dual_δCOI` | `dual_delta_COI.csv` |
-| `Pe_duals` | `dual_Pe` | `dual_Pe.csv` |
-| `delta_Duals` | `dual_δ` | `dual_delta.csv` |
-| `Delta_Omega_Duals` | `dual_Δω` | `dual_Delta_Omega.csv` |
-| `delta_COI_Lower_Duals` | `dual_δ_COI_lower` | `dual_delta_COI_lower.csv` |
-| `delta_COI_Upper_Duals` | `dual_δ_COI_upper` | `dual_delta_COI_upper.csv` |
+| `δCOI_Duals` | `dual_δCOI` | `dual_delta_COI.csv` |
+| `Pe_Duals` | `dual_Pe` | `dual_Pe.csv` |
+| `δ_Duals` | `dual_δ` | `dual_delta.csv` |
+| `Δω_Duals` | `dual_Δω` | `dual_Delta_Omega.csv` |
+| `δ_COI_lower_Duals` | `dual_δ_COI_lower` | `dual_delta_COI_lower.csv` |
+| `δ_COI_upper_Duals` | `dual_δ_COI_upper` | `dual_delta_COI_upper.csv` |
 | `δ_ref_lower_Duals` | `dual_δ_ref_lower` | `dual_delta_ref_lower.csv` |
 | `δ_ref_upper_Duals` | `dual_δ_ref_upper` | `dual_delta_ref_upper.csv` |
-| — | `dual_Δω_abs_lower` | `dual_Delta_Omega_abs_lower.csv` |
-| — | `dual_Δω_abs_upper` | `dual_Delta_Omega_abs_upper.csv` |
+| `δ_pair_lower_Duals` | `dual_δ_pair_lower` | `dual_delta_pair_lower.csv` |
+| `δ_pair_upper_Duals` | `dual_δ_pair_upper` | `dual_delta_pair_upper.csv` |
+| `Δω_COI_lower_Duals` | `dual_Δω_COI_lower` | `dual_Delta_Omega_COI_lower.csv` |
+| `Δω_COI_upper_Duals` | `dual_Δω_COI_upper` | `dual_Delta_Omega_COI_upper.csv` |
+| `Δω_abs_lower_Duals` | `dual_Δω_abs_lower` | `dual_Delta_Omega_abs_lower.csv` |
+| `Δω_abs_upper_Duals` | `dual_Δω_abs_upper` | `dual_Delta_Omega_abs_upper.csv` |
 
 Governor and AVR paths add `dual_Pref_init`, `dual_gov_valve`, `dual_gov_mech`, `dual_gov_valve_sat` (or `dual_LB_gov_valve` / `dual_UB_gov_valve`, depending on `governor_limiter`), `dual_Vref_init`, `dual_avr_E_fd`, etc., when those constraints are built. What each of those multipliers prices is in [8. Machine controls](08_controls_avr_governor.md); the file-by-file output inventory is in [Dynamic controls (AVR / governor)](../dynamic_controls_avr_governor.md).
 
@@ -141,7 +147,7 @@ Governor and AVR paths add `dual_Pref_init`, `dual_gov_valve`, `dual_gov_mech`, 
     Run the Kron TSC-ACOPF example from [6. The TSC-OPF, assembled](06_tsc_opf_assembled.md) with `δ_tol_deg = 120` and `save_duals = true`. After a successful solve:
 
     1. Open `RESULTS/Results - <timestamp>/Dispatch/Dispatch_Duals.xlsx` and note $\lambda_k$ on the marginal buses (LMP $= +\lambda_k$, so the value should read positive and near the marginal unit's `g_cost_1`).
-    2. Open `Transient_Stability/OPF_Duals_Results.xlsx` → `delta_COI_Upper_Duals`. Find generator 2 in the fault window; a non-zero entry means the upper $\delta$ corridor bound was active at that time step.
+    2. Open `Transient_Stability/OPF_Duals_Results.xlsx` → `δ_COI_upper_Duals`. Find generator 2 in the fault window; a non-zero entry means the upper $\delta$ corridor bound was active at that time step.
     3. Compare magnitude and sign with `Transient_Stability/CSV_duals/dual_delta_COI_upper.csv` (same registry row).
 
     If you enable `dispatch.solve_explicit_dual = true` on a **dispatch-only** linear DCOPF of the same case, $\pi_k$ from `Dispatch_Dual/` should match $+\lambda_k$ from the primal dispatch duals on balance rows (up to solver tolerance) — the two multipliers differ by a sign, the two prices do not.
@@ -156,6 +162,5 @@ Governor and AVR paths add `dual_Pref_init`, `dual_gov_valve`, `dual_gov_mech`, 
 | Transient dual registry | `DynDualRegistry.jl` | `transient.builder`, `dyn_model` |
 | Primal dual export | `functions_2_save_dispatch_duals.jl`, `Save_Duals_Dynamic_Model_*` | `save_duals = true` |
 | Explicit ED / DC dual LP | `_ed/`, `_dcopf/` dual builders | `solve_explicit_dual = true` |
-| Sign cross-check tests | `test/runtests_explicit_dual.jl`, smoke TSC tests | CI |
 
 Parameter-level export flags: [Parameter reference — `RunConfig`](../parameter_reference.md).
